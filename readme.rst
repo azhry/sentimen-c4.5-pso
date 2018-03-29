@@ -7,14 +7,13 @@ Author
 ******
 
 Azhary Arliansyah
-NIM. 09021181419007
-Teknik Informatika Universitas Sriwijaya
+
 
 ********
 Deskripsi
 ********
 
-Program ini dikembangkan untuk mengukur tingkat akurasi dari algoritma C4.5 pada analisis sentimen menggunakan Particle Swarm Optimization(PSO) yang akan dikembangkan dalam 3 fase.
+Program ini dikembangkan dalam bahasa pemrograman Python untuk mengukur tingkat akurasi dari algoritma C4.5 pada analisis sentimen menggunakan Particle Swarm Optimization(PSO) yang akan dikembangkan dalam 3 fase.
 
 *****
 Fase 1
