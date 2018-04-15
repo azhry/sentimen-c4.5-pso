@@ -1,0 +1,11 @@
+@startuml
+
+| Peneliti |
+start
+:Memilih menu tampilkan\nhasil percobaan;
+| Sistem |
+:Mengambil data hasil\npercobaan dari basisdata;
+:Menampilkan hasil percobaan;
+stop
+
+@enduml

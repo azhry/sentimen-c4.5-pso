@@ -1,0 +1,12 @@
+@startuml
+
+| Peneliti |
+start
+:Memilih baris data\nyang akan dihapus;
+:Menekan tombol hapus;
+| Sistem |
+:Menghapus data yang\ndipilih dari basisdata;
+:Menampilkan data yang diperbarui;
+stop
+
+@enduml

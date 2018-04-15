@@ -13,8 +13,11 @@ def stopword_removal(tokens):
         stopwords = f.read().splitlines()
         return [token for token in tokens if token not in stopwords]
             
-    
+# stemming sekaligus casefolding
 def stemming(str):
     factory = StemmerFactory()
     stemmer = factory.create_stemmer()
     return stemmer.stem(str)
+    
+def preprocess(str):
+    return stopword_removal(tokenizing(stemming(str)))
