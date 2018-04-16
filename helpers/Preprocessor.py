@@ -7,11 +7,12 @@ def casefolding(str):
 def tokenizing(str, delimiter = " "):
     return str.split(delimiter)
     
-def stopword_removal(tokens):
-    path = relative_path("id.stopwords.txt")
+def get_stopwords(path):
     with open(path) as f:
-        stopwords = f.read().splitlines()
-        return [token for token in tokens if token not in stopwords]
+        return f.read().splitlines()
+
+def stopword_removal(tokens, stopwords):
+    return [token for token in tokens if token not in stopwords]
             
 # stemming sekaligus casefolding
 def stemming(str):
@@ -20,4 +21,5 @@ def stemming(str):
     return stemmer.stem(str)
     
 def preprocess(str):
-    return stopword_removal(tokenizing(stemming(str)))
+    stopwords = get_stopwords(relative_path("id.stopwords.txt"))
+    return stopword_removal(tokenizing(stemming(str)), stopwords)

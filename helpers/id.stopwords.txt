@@ -147,6 +147,7 @@ demi
 demikian
 demikianlah
 dengan
+dgn
 depan
 di
 dia
@@ -756,3 +757,4 @@ yaitu
 yakin
 yakni
 yang
+yg

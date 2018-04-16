@@ -1,13 +1,33 @@
 # -*- coding: utf-8 -*-
-from helpers.Preprocessor import preprocess
+import time
+start_time = time.time()
+
+from helpers.Path import relative_path
+from libs.DataImporter import DataImporter
 from libs.TF_IDF import TF_IDF
-from libs.CorpusCreator import CorpusCreator
+from libs.Preprocessor import Preprocessor
+from core.Database import Database
 
-text = "Susah cari driver sampai kepanasan dan kelaparan. Katanya pada demo masalah tarifnya diturunin. Kasian dong drivernya. Mereka sangat membantu kami. Tak pernah mengeluh walaupun kadang panas ataupun hujan tetap setia mengantar kami. Dan mereka sangat sopan terhadap kami dibandingkan vendor lain. Saya kira pendapatan 4rb rupiah tidak sebanding dengan perjuangan mereka bertaruh nyawa. Harusnya direspon perjuangan mereka hari ini. Biar kami juga dapat terbantu"
-preprocessed = preprocess(text)
+db = Database("localhost", "root", "", "sentimen")
 
-tfidf = TF_IDF()
-corpus_creator = CorpusCreator()
-dictionary = corpus_creator.term_set([preprocessed])
-print(list(dictionary))
-print(tfidf.tf("banding", preprocessed))
+document_path = relative_path("../data/Formulir jajak pendapat bisnis dan pelayanan mengenai angkutan online (gojek, grab, dsb)(1-370).xlsx")
+stopword_path = relative_path("id.stopwords.txt")
+correct_words_path = relative_path("../libs/correct_words.json")
+
+
+# data = DataImporter(document_path)
+# documents = data.get_data()
+# print(db.select("preprocessed_data"))
+preprocessor = Preprocessor(stopword_path, correct_words_path)
+# for document, label in zip(documents["Review"], documents["Label"]):
+# 	preprocessed = " ".join(preprocessor.preprocess(document))
+# 	db.insert("preprocessed_data", { "review": preprocessed, "label": label })
+# 	print(preprocessed)
+
+# # tf_idf = TF_IDF(documents["Review"])
+# tf_idf.set_dictionary()
+# print(tf_idf.get_dictionary())
+
+
+
+print("Executed in %s seconds" % (time.time() - start_time))

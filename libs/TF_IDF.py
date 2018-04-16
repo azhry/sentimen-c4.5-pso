@@ -1,23 +1,36 @@
 from math import log
+from helpers.Preprocessor import preprocess
 
 class TF_IDF():
     
-    def __init__(self):
+    def __init__(self, documents):
         self.weights = []
-    
+        self.terms = []
+        self.documents = documents
+
+    def set_dictionary(self):
+        self.terms = []
+        for document in self.documents:
+            self.terms = preprocess(document) + self.terms
+        print(self.terms)
+
+    def get_dictionary(self):
+        return self.terms
+
     def get_weight(self, term):
-        pass
+        return self.weights
     
     def tf(self, term, document):
         return document.count(term) / float(len(document))
         
-    def idf(self, term, documents):
-        termCount = 0
-        for doc in documents:
+    def idf(self, term):
+        term_count = 0
+        for doc in self.documents:
             if term in doc:
-                termCount += 1
+                term_count += 1
         
-        if termCount > 0:
-            return 1.0 + log(float(len(documents)) / termCount)
+        if term_count > 0:
+            return 1.0 + log(float(len(self.documents)) / term_count)
         else:
             return 1.0
+
