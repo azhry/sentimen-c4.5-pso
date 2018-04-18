@@ -11,14 +11,25 @@ class TF_IDF():
     def set_dictionary(self):
         self.terms = []
         for document in self.documents:
-            self.terms = preprocess(document) + self.terms
-        print(self.terms)
+            self.terms = document[1].split(" ") + self.terms
 
     def get_dictionary(self):
         return self.terms
 
     def get_weight(self, term):
         return self.weights
+
+    def set_weight(self, start = 0, end = None, thread_name = "Thread-X"):
+        end = end or len(self.documents)
+        for i in range(start, end):
+            print("%s: calculate weights for document %d" % (thread_name, i + 1))
+            weight = {}
+            for term in self.terms:
+                tf = self.tf(term, self.documents[i][1].split(" "))
+                idf = self.idf(term)
+                weight[term] = tf * idf
+            self.weights.append(weight)
+        print(self.weights)
     
     def tf(self, term, document):
         return document.count(term) / float(len(document))
@@ -26,7 +37,7 @@ class TF_IDF():
     def idf(self, term):
         term_count = 0
         for doc in self.documents:
-            if term in doc:
+            if term in doc[1].split(" "):
                 term_count += 1
         
         if term_count > 0:
