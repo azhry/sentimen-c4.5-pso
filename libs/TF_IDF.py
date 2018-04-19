@@ -6,6 +6,7 @@ class TF_IDF():
     def __init__(self, documents):
         self.weights = []
         self.terms = []
+        self.idf = {}
         self.documents = documents
 
     def set_dictionary(self):
@@ -26,22 +27,35 @@ class TF_IDF():
             weight = {}
             for term in self.terms:
                 tf = self.tf(term, self.documents[i][1].split(" "))
-                idf = self.idf(term)
+                idf = self.idf[term]
                 weight[term] = tf * idf
             self.weights.append(weight)
-        print(self.weights)
     
     def tf(self, term, document):
         return document.count(term) / float(len(document))
         
-    def idf(self, term):
-        term_count = 0
-        for doc in self.documents:
-            if term in doc[1].split(" "):
-                term_count += 1
+    def set_idf(self):
+        dlen = len(self.documents)
+        if len(self.terms) <= 0:
+            self.set_dictionary()
+        for term in self.terms:
+            term_count = 0
+            for doc in self.documents:
+                if term in doc[1].split(" "):
+                    term_count += 1
+            if term_count > 0:
+                self.idf[term] = 1.0 + log(float(dlen) / term_count)
+            else:
+                self.idf[term] = 1.0
+
+    # def idf(self, term):
+    #     term_count = 0
+    #     for doc in self.documents:
+    #         if term in doc[1].split(" "):
+    #             term_count += 1
         
-        if term_count > 0:
-            return 1.0 + log(float(len(self.documents)) / term_count)
-        else:
-            return 1.0
+    #     if term_count > 0:
+    #         return 1.0 + log(float(len(self.documents)) / term_count)
+    #     else:
+    #         return 1.0
 
