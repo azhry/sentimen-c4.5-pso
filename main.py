@@ -48,39 +48,48 @@
 # db.close()
 # # print("\nExecuted in %.2f seconds" % (time.time() - start_time))
 
-import sys
-from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QLineEdit
-from PyQt5.QtGui import QIcon
-from PyQt5.QtCore import pyqtSlot
+# import sys
+# from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QLineEdit
+# from PyQt5.QtGui import QIcon
+# from PyQt5.QtCore import pyqtSlot
  
-class App(QMainWindow):
+# class App(QMainWindow):
  
-    def __init__(self):
-        super().__init__()
-        self.title 	= "Analisis Sentimen C4.5 - PSO"
-        self.left 	= 50
-        self.top 	= 50
-        self.width 	= 640
-        self.height = 480
-        self.initUI()
+#     def __init__(self):
+#         super().__init__()
+#         self.title 	= "Analisis Sentimen C4.5 - PSO"
+#         self.left 	= 50
+#         self.top 	= 50
+#         self.width 	= 640
+#         self.height = 480
+#         self.initUI()
  
-    def initUI(self):
-        self.setWindowTitle(self.title)
-        self.setGeometry(self.left, self.top, self.width, self.height)
-        button = QPushButton("Classify", self)
-        button.setToolTip("This is an example button")
-        button.move(100, 70)
-        button.clicked.connect(self.classify)
-        self.textbox = QLineEdit(self)
-        self.textbox.move(100, 30)
-        self.textbox.resize(280, 20)
-        self.show()
+#     def initUI(self):
+#         self.setWindowTitle(self.title)
+#         self.setGeometry(self.left, self.top, self.width, self.height)
+#         button = QPushButton("Classify", self)
+#         button.setToolTip("This is an example button")
+#         button.move(100, 70)
+#         button.clicked.connect(self.classify)
+#         self.textbox = QLineEdit(self)
+#         self.textbox.move(100, 30)
+#         self.textbox.resize(280, 20)
+#         self.show()
 
-    @pyqtSlot()
-    def classify(self):
-    	self.statusBar().showMessage("Classifying...")
+#     @pyqtSlot()
+#     def classify(self):
+#     	self.statusBar().showMessage("Classifying...")
  
-if __name__ == '__main__':
+# if __name__ == '__main__':
+#     app = QApplication(sys.argv)
+#     ex = App()
+#     sys.exit(app.exec_())
+
+import sys
+from boundaries.AppWindow import AppWindow
+from PyQt5.QtWidgets import QApplication
+
+if __name__ == "__main__":
     app = QApplication(sys.argv)
-    ex = App()
+    window = AppWindow()
     sys.exit(app.exec_())

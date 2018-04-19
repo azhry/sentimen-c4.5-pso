@@ -1,0 +1,28 @@
+@startuml
+
+hide footbox
+title Menambahkan Data Ulasan\n
+
+actor Peneliti
+boundary AppWindow
+control "importer : DataImporter"
+control "preprocessor : Preprocessor"
+entity "db : Database"
+
+Peneliti -> AppWindow : import_data()
+activate Peneliti
+activate AppWindow
+AppWindow -> "importer : DataImporter" : import()
+activate "importer : DataImporter"
+"importer : DataImporter" --> AppWindow : dataframe
+deactivate "importer : DataImporter"
+loop i < len(dataframe)
+	AppWindow -> "preprocessor : Preprocessor" : preprocess(review)
+	activate "preprocessor : Preprocessor"
+	"preprocessor : Preprocessor" --> AppWindow : preprocessed_review
+	deactivate "preprocessor : Preprocessor"
+	AppWindow -> "db : Database" : insert(table, review)
+	activate "db : Database"
+end
+
+@enduml
