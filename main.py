@@ -1,16 +1,16 @@
 # # -*- coding: utf-8 -*-
-import time
-start_time = time.time()
+# import time
+# start_time = time.time()
 
-import threading
-from helpers.Path import relative_path
-from libs.DataImporter import DataImporter
-from libs.TF_IDF import TF_IDF
-from libs.Preprocessor import Preprocessor
-from libs.C45 import C45
-from core.Database import Database
+# import threading
+# from helpers.Path import relative_path
+# from libs.DataImporter import DataImporter
+# from libs.TF_IDF import TF_IDF
+# from libs.Preprocessor import Preprocessor
+# from libs.C45 import C45
+# from core.Database import Database
 
-db = Database("localhost", "root", "", "sentimen")
+# db = Database("localhost", "root", "", "sentimen")
 # # db.clean("preprocessed_data")
 # document_path = relative_path("../data/Formulir jajak pendapat bisnis dan pelayanan mengenai angkutan online (gojek, grab, dsb)(1-370).xlsx")
 # # stopword_path = relative_path("id.stopwords.txt")
@@ -32,15 +32,15 @@ db = Database("localhost", "root", "", "sentimen")
 # # 	db.insert("preprocessed_data", { "review": preprocessed, "label": label })
 # # 	print(preprocessed)
 
-documents = db.select("preprocessed_data")
-tf_idf = TF_IDF(documents)
-tf_idf.set_dictionary()
-tf_idf.set_idf()
-dictionary = tf_idf.get_dictionary()
-print("Num attributes: %d" % len(dictionary))
-try:
-	t1 = threading.Thread(target=tf_idf.set_weight, args = (0, 185, "Thread-1"))
-	t2 = threading.Thread(target=tf_idf.set_weight, args = (185, 370, "Thread-2"))
+# documents = db.select("preprocessed_data")
+# tf_idf = TF_IDF(documents)
+# tf_idf.set_dictionary()
+# tf_idf.set_idf()
+# dictionary = tf_idf.get_dictionary()
+# print("Num attributes: %d" % len(dictionary))
+# try:
+# 	t1 = threading.Thread(target=tf_idf.set_weight, args = (0, 185, "Thread-1"))
+# 	t2 = threading.Thread(target=tf_idf.set_weight, args = (185, 370, "Thread-2"))
 	# t3 = threading.Thread(target=tf_idf.set_weight, args = (148, 222, "Thread-3"))
 	# t4 = threading.Thread(target=tf_idf.set_weight, args = (222, 296, "Thread-4"))
 	# t5 = threading.Thread(target=tf_idf.set_weight, args = (296, 370, "Thread-5"))
@@ -50,8 +50,8 @@ try:
 	# t9 = threading.Thread(target=tf_idf.set_weight, args = (296, 333, "Thread-9"))
 	# t10 = threading.Thread(target=tf_idf.set_weight, args = (333, 370, "Thread-10"))
 
-	t1.start()
-	t2.start()
+	# t1.start()
+	# t2.start()
 	# t3.start()
 	# t4.start()
 	# t5.start()
@@ -62,8 +62,8 @@ try:
 	# t10.start()
 	
 	# join the threads thus main thread will wait till this threads are done
-	t1.join()
-	t2.join()
+	# t1.join()
+	# t2.join()
 	# t3.join()
 	# t4.join()
 	# t5.join()
@@ -73,12 +73,12 @@ try:
 	# t9.join()
 	# t10.join()
 
-except:
-	print("Error: unable to start thread")
+# except:
+# 	print("Error: unable to start thread")
 
 
-db.close()
-print("\nExecuted in %.2f seconds" % (time.time() - start_time))
+# db.close()
+# print("\nExecuted in %.2f seconds" % (time.time() - start_time))
 
 # import sys
 # from PyQt5.QtWidgets import QApplication, QWidget, QMainWindow, QPushButton, QLineEdit
@@ -117,11 +117,11 @@ print("\nExecuted in %.2f seconds" % (time.time() - start_time))
 #     ex = App()
 #     sys.exit(app.exec_())
 
-# import sys
-# from boundaries.AppWindow import AppWindow
-# from PyQt5.QtWidgets import QApplication
+import sys
+from boundaries.AppWindow import AppWindow
+from PyQt5.QtWidgets import QApplication
 
-# if __name__ == "__main__":
-#     app = QApplication(sys.argv)
-#     window = AppWindow()
-#     sys.exit(app.exec_())
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = AppWindow()
+    sys.exit(app.exec_())
