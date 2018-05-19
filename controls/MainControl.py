@@ -2,9 +2,11 @@ from core.Database import Database
 from libs.DataImporter import DataImporter
 from libs.Preprocessor import Preprocessor
 from helpers.Path import relative_path
+from libs.C45_revision import C45_revision
 from PyQt5.QtWidgets import *
 import random
 import numpy as np
+import threading
 # from PyQt5.QtCore import QThread, SIGNAL
 
 class MainControl():
@@ -14,7 +16,7 @@ class MainControl():
 		self.stopwordPath = relative_path("id.stopwords.txt")
 		self.correctWordsPath = relative_path("../libs/correct_words.json")
 		self.preprocessor = Preprocessor(self.stopwordPath, self.correctWordsPath)
-
+		self.k = 0
 
 	def importExcel(self, UI):
 		return self.openFileDialog(UI)
@@ -45,10 +47,35 @@ class MainControl():
 		self.db.multiplesql(sql)
 
 	def foldData(self, k):
+		self.k = k
 		data = list(self.db.select("preprocessed_data"))
 		random.shuffle(data)
 		foldedData = np.array(np.array_split(data, k))
+		for i, data in enumerate(foldedData):
+			ids = ",".join(data[:,0])
+			sql = "UPDATE preprocessed_data SET fold_number = " + str(i + 1) + " WHERE id IN (" + ids + ");"
+			self.db.multiplesql(sql)
+		print("Data folded")
 		return foldedData
+
+	def trainModel(self):
+		data = list(self.db.select("preprocessed_data"))
+		clfs = []
+		threads = []
+		try:
+			for i in range(self.k):
+				testData = list(filter(lambda row: row[3] == i + 1, data))
+				trainData = list(filter(lambda row: row[3] != i + 1, data))
+				clfs.append(C45_revision(trainData, testData, i + 1))
+				threads.append(threading.Thread(target = clfs[i].getThresholdValue, args = ()))
+				threads[i].start()
+				print("Start thread: ", i)
+
+			for i in range(self.k):
+				threads[i].join()
+		except:
+			print("Error: unable to start thread")
+
 
 	def readExcelFile(self):
 		pass

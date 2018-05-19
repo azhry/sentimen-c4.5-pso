@@ -86,6 +86,7 @@ class AppWindow(QMainWindow):
 		trainC45Layout = QFormLayout()
 		trainC45Layout.addRow(QLabel("Total Entropy: "), QLabel("0"))
 		trainC45Button = QPushButton("Train C4.5")
+		trainC45Button.clicked.connect(self.trainModel)
 		trainC45Layout.addRow(trainC45Button)
 		self.trainC45GroupBox.setLayout(trainC45Layout)
 
@@ -128,6 +129,9 @@ class AppWindow(QMainWindow):
 
 	def saveData(self):
 		self.mainControl.saveData()
+
+	def trainModel(self):
+		self.mainControl.trainModel()
 
 	def preprocessData(self):
 		try:
