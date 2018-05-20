@@ -6,6 +6,9 @@ class Database():
 		self.db = MySQLdb.connect(host, username, password, database)
 		self.cursor = self.db.cursor()
 
+	def insert_id(self):
+		return self.cursor.lastrowid
+
 	def select(self, table, condition = "", order = None):
 		clen = len(condition)
 		sql = "SELECT * FROM %s" % table

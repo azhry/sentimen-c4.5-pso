@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from controls.MainControl import MainControl
-from core.Database import Database
 from libs.TF_IDF import TF_IDF
 
 class AppWindow(QMainWindow):

@@ -5,7 +5,7 @@ class TFIDF_revision():
 
 	def __init__(self, documents, terms):
 		self.documents 	= documents
-		self.db 	 	= Database("localhost", "root", "", "sentimen")
+		self.db 	 	= Database("localhost", "root", "", "sentimen_test")
 		self.terms		= terms
 		self.idf 		= {}
 

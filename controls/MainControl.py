@@ -12,7 +12,7 @@ import threading
 class MainControl():
 
 	def __init__(self):
-		self.db = Database("localhost", "root", "", "sentimen")
+		self.db = Database("localhost", "root", "", "sentimen_test")
 		self.stopwordPath = relative_path("id.stopwords.txt")
 		self.correctWordsPath = relative_path("../libs/correct_words.json")
 		self.preprocessor = Preprocessor(self.stopwordPath, self.correctWordsPath)
@@ -52,7 +52,7 @@ class MainControl():
 		random.shuffle(data)
 		foldedData = np.array(np.array_split(data, k))
 		for i, data in enumerate(foldedData):
-			ids = ",".join(data[:,0])
+			ids = ",".join([str(x) for x in data[:,0]])
 			sql = "UPDATE preprocessed_data SET fold_number = " + str(i + 1) + " WHERE id IN (" + ids + ");"
 			self.db.multiplesql(sql)
 		print("Data folded")
@@ -64,10 +64,12 @@ class MainControl():
 		threads = []
 		try:
 			for i in range(self.k):
-				testData = list(filter(lambda row: row[3] == i + 1, data))
-				trainData = list(filter(lambda row: row[3] != i + 1, data))
-				clfs.append(C45_revision(trainData, testData, i + 1))
-				threads.append(threading.Thread(target = clfs[i].getThresholdValue, args = ()))
+				# testData = list(filter(lambda row: row[3] == i + 1, data))
+				# trainData = list(filter(lambda row: row[3] != i + 1, data))
+				testData = []
+				trainData = list(data)
+				clfs.append(C45_revision(trainData, trainData, i + 1))
+				threads.append(threading.Thread(target = clfs[i].constructTree, args = ()))
 				threads[i].start()
 				print("Start thread: ", i)
 
