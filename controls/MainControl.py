@@ -63,13 +63,13 @@ class MainControl():
 		clfs = []
 		threads = []
 		try:
-			for i in range(self.k):
+			for i in range(1):
 				# testData = list(filter(lambda row: row[3] == i + 1, data))
 				# trainData = list(filter(lambda row: row[3] != i + 1, data))
 				testData = []
 				trainData = list(data)
 				clfs.append(C45_revision(trainData, trainData, i + 1))
-				threads.append(threading.Thread(target = clfs[i].constructTree, args = ()))
+				threads.append(threading.Thread(target = clfs[i].optimize, args = ()))
 				threads[i].start()
 				print("Start thread: ", i)
 

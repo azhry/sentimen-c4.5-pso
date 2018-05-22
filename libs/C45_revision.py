@@ -1,5 +1,6 @@
 from core.Database import Database
 from libs.TFIDF_revision import TFIDF_revision
+from libs.PSO import PSO
 from entities.Node import Node
 from math import log
 import numpy as np
@@ -60,9 +61,7 @@ class C45_revision():
 			self.totalEntropy += (-1 * (row[1] / length) * log(row[1] / length, 10))
 
 	def getDocumentsVector(self):
-		print("Retrieving...")
 		self.data = self.db.query("SELECT id_document, attribute, weight FROM weights WHERE fold_number = " + str(self.foldNumber))
-		print("Retrieved")
 
 	def getPossibleThresholds(self, attribute, excludedData = []):
 		# self.termData[attribute] = self.data[self.data[:,1] == attribute]
@@ -111,12 +110,9 @@ class C45_revision():
 				elif direction == "right":
 					self.db.multiplesql("UPDATE tree_nodes SET right_node = " + str(insertId) + " WHERE node_id = " + str(parentNodeId))
 
-			print("Node added: ", selectedAttribute[0])
-
 			left, right, leftData, rightData = self.getChildNodes(selectedAttribute[0], selectedAttribute[1], excludedData)
 			leftDataCount = len(leftData)
 			rightDataCount = len(rightData)
-			print("Left: ", left, " , Right: ", right)
 
 			leftUnique, leftCounts = np.unique(left, return_counts = True)
 			rightUnique, rightCounts = np.unique(right, return_counts = True)
@@ -160,38 +156,74 @@ class C45_revision():
 		return gain
 
 	def constructTree(self):
-		self.db.multiplesql("DELETE FROM weights WHERE fold_number = " + str(self.foldNumber))
-		self.db.multiplesql("DELETE FROM attributes WHERE fold_number = " + str(self.foldNumber))
+		# self.db.multiplesql("DELETE FROM weights WHERE fold_number = " + str(self.foldNumber))
+		# self.db.multiplesql("DELETE FROM attributes WHERE fold_number = " + str(self.foldNumber))
+		# self.db.multiplesql("DELETE FROM tree_nodes WHERE fold_number = " + str(self.foldNumber))
+		# self.calculateTotalEntropy()
+		# self.calculateWeights()
+		# self.getDocumentsVector()
+		# self.getThresholdValue()
+
+		self.retrieveAttributes()
+		self.tfidf = TFIDF_revision(self.trainData, self.attributes)
+		self.tfidf.calculateIdf()
+		return self.evaluate(self.tfidf)
+
+	def buildTree(self, attributes):
 		self.db.multiplesql("DELETE FROM tree_nodes WHERE fold_number = " + str(self.foldNumber))
+		self.tree = None
 		self.calculateTotalEntropy()
-		self.calculateWeights()
 		self.getDocumentsVector()
 		self.getThresholdValue()
-		print("TREE")
-		print(self.tree)
-		self.evaluate()
+		self.psoTfidf = TFIDF_revision(self.trainData, attributes)
+		self.psoTfidf.calculateIdf()
+		return self.evaluate(self.psoTfidf)
 
-	def evaluate(self):
-		idf = self.tfidf.idf
-		right, wrong = 0, 0
-		self.tree = self.db.query("SELECT * FROM tree_nodes WHERE fold_number = " + str(self.foldNumber))
+	def evaluate(self, docVector):
+		idf = docVector.idf
+		correct, incorrect = 0, 0
+		if self.tree == True or self.tree is None:
+			self.tree = self.db.query("SELECT * FROM tree_nodes WHERE fold_number = " + str(self.foldNumber))
+
 		for data in self.testData:
 			tokens = data[1].split(" ")
 			tfidf_val = {}
 			for token in tokens:
-				tfidf_val[token] = self.tfidf.tf(token, data[1]) * (idf[token] if token in idf else 0)
+				tfidf_val[token] = docVector.tf(token, data[1]) * (idf[token] if token in idf else 0)
 			node = [x for x in self.tree if x[1] == "root" and x[6] == self.foldNumber][0]
-			if self.traverseChild(node, tfidf_val[node[2]] if node[2] in tfidf_val else 0):
-				right += 1
+			if self.traverseChild(node, tfidf_val[node[2]] if node[2] in tfidf_val else 0, data[2], tfidf_val):
+				correct += 1
 			else:
-				wrong += 1
+				incorrect += 1
 
-		print("Right: ", right, " , Wrong: ", wrong)
+		return correct / (correct + incorrect) * 100 # accuracy percentage
 
-	def traverseChild(self, node, weight):
+	def traverseChild(self, node, weight, label, tfidf_val):
+		if node[1] == "label":
+			return node[2] == label
+
 		threshold = node[3]
 		if weight > threshold:
 			if node[5] is not None:
-				childNode = [x for x in self.tree if x[0] == node[5]] # if empty, len(childNode) == 0
+				childNode = [x for x in self.tree if x[0] == node[5]]
+				if len(childNode) <= 0:
+					childNode = [x for x in self.tree if x[0] == node[4]]
+					return False if len(childNode) <= 0 else self.traverseChild(childNode[0], tfidf_val[childNode[0][2]] if childNode[0][2] in tfidf_val else 0, label, tfidf_val)
+				else:
+					childNode = childNode[0]
+					return self.traverseChild(childNode, tfidf_val[childNode[2]] if childNode[2] in tfidf_val else 0, label, tfidf_val)
 		else:
-			pass
+			if node[4] is not None:
+				childNode = [x for x in self.tree if x[0] == node[4]]
+				if len(childNode) <= 0:
+					childNode = [x for x in self.tree if x[0] == node[5]]
+					return False if len(childNode) <= 0 else self.traverseChild(childNode[0], tfidf_val[childNode[0][2]] if childNode[0][2] in tfidf_val else 0, label, tfidf_val)
+				else:
+					childNode = childNode[0]
+					return self.traverseChild(childNode, tfidf_val[childNode[2]] if childNode[2] in tfidf_val else 0, label, tfidf_val)
+
+
+	def optimize(self):
+		self.retrieveAttributes()
+		pso = PSO(len(self.attributes), 10, 10, 0.9, 0.9, 85)
+		pso.searchBestSolution(self)
