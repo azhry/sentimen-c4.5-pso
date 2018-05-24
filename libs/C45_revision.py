@@ -44,7 +44,6 @@ class C45_revision():
 
 	def calculateWeights(self):
 
-		print("Calculating weights...")
 		self.constructAttributes()
 
 		self.tfidf = TFIDF_revision(self.trainData, self.attributes)

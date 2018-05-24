@@ -36,7 +36,6 @@ class TFIDF_revision():
 		return self.weights
 
 	def saveWeight(self, foldNumber):
-		print("Constructs query...")
 		for weight in self.weights:
 			sql = "INSERT INTO weights(id_document, attribute, weight, fold_number) VALUES"
 			termWeight = weight["weight"].items()
@@ -48,4 +47,3 @@ class TFIDF_revision():
 					sql += ","
 				j += 1
 			self.db.multiplesql(sql)
-			print("Document %s saved." % (weight["id_document"]))

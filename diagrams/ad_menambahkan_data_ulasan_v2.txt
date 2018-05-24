@@ -1,0 +1,21 @@
+@startuml
+| Peneliti |
+start
+:Menekan menu impor data;
+| Sistem |
+:Menampilkan kotak dialog pencarian berkas;
+| Peneliti |
+:Memilih berkas dan menekan tombol buka;
+| Sistem |
+:Menampilkan data yang diimpor;
+| Peneliti |
+:Menekan tombol praproses;
+| Sistem |
+:Melakukan praproses data yang ada pada berkas;
+:Menampilkan data yang telah dipraproses;
+| Peneliti |
+:Menekan tombol simpan data;
+| Sistem |
+:Menyimpan data yang telah dipraproses ke basisdata;
+stop
+@enduml

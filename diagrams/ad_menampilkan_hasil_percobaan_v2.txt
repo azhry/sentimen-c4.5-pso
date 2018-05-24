@@ -1,0 +1,12 @@
+@startuml
+| Peneliti |
+start
+:Memilih menu pengujian;
+| Sistem |
+:Menampilkan menu pengujian;
+| Peneliti |
+:Menekan tombol tampilkan\nhasil pengujian;
+| Sistem |
+:Menampilkan hasil pengujian;
+stop
+@enduml

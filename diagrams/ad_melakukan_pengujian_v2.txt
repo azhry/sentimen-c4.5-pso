@@ -1,0 +1,27 @@
+@startuml
+| Peneliti |
+start
+:Memilih menu pengujian;
+| Sistem |
+:Menampilkan pilihan pengujian;
+| Peneliti |
+:Memilih pengujian;
+| Sistem |
+if ( Tipe pengujian? ) then ( **C4.5** )
+	| Peneliti |
+	:Menekan tombol Test C4.5;
+	| Sistem |
+	:Melakukan pengujian dengan C4.5;
+	:Menyimpan hasil pengujian\nke basisdata;
+	:Menampilkan hasil pengujian;
+else ( **C4.5 - PSO** )
+	| Peneliti |
+	:Memasukan nilai parameter\nPSO;
+	:Menekan tombol Optimize C4.5;
+	| Sistem |
+	:Melakukan pengujian dengan\nC4.5 - PSO;
+	:Menyimpan hasil pengujian\nke basisdata;
+	:Menampilkan hasil pengujian;
+endif
+stop
+@enduml

@@ -55,7 +55,6 @@ class MainControl():
 			ids = ",".join([str(x) for x in data[:,0]])
 			sql = "UPDATE preprocessed_data SET fold_number = " + str(i + 1) + " WHERE id IN (" + ids + ");"
 			self.db.multiplesql(sql)
-		print("Data folded")
 		return foldedData
 
 	def trainModel(self):
@@ -63,7 +62,7 @@ class MainControl():
 		clfs = []
 		threads = []
 		try:
-			for i in range(1):
+			for i in range(self.k):
 				# testData = list(filter(lambda row: row[3] == i + 1, data))
 				# trainData = list(filter(lambda row: row[3] != i + 1, data))
 				testData = []

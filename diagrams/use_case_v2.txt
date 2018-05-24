@@ -1,0 +1,17 @@
+@startuml
+left to right direction
+skinparam packageStyle rectangle
+skinparam linetype polyline
+
+actor peneliti
+rectangle Sistem {
+
+	peneliti -- ( Menampilkan hasil pengujian\nyang dilakukan )
+	peneliti -- ( Melakukan pengujian )
+	peneliti -- ( Menambahkan data ulasan )
+
+	( Melakukan pengujian ) ..> ( Melatih algoritma C4.5 ) : include
+	( Melakukan pengujian ) ..> ( Seleksi atribut menggunakan\nParticle Swarm Optimization ) : extend
+
+}
+@enduml
