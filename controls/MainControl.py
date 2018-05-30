@@ -59,33 +59,34 @@ class MainControl():
 
 	def trainModel(self):
 		data = list(self.db.select("preprocessed_data"))
-		clfs = []
+		self.clfs = []
 		threads = []
 		try:
 			for i in range(self.k):
-				# testData = list(filter(lambda row: row[3] == i + 1, data))
-				# trainData = list(filter(lambda row: row[3] != i + 1, data))
-				testData = []
-				trainData = list(data)
-				clfs.append(C45_revision(trainData, trainData, i + 1))
-				threads.append(threading.Thread(target = clfs[i].optimize, args = ()))
+				testData = list(filter(lambda row: row[3] == i + 1, data))
+				trainData = list(filter(lambda row: row[3] != i + 1, data))
+				self.clfs.append(C45_revision(trainData, trainData, i + 1))
+				threads.append(threading.Thread(target = self.clfs[i].constructTree, args = ()))
 				threads[i].start()
 				print("Start thread: ", i)
 
 			for i in range(self.k):
 				threads[i].join()
 		except:
-			print("Error: unable to start thread")
+			print("Error training: unable to start thread")
 
+	def testModel(self):
+		try:
+			for i in range(self.k):
+				print(f"Testing tree {i + 1}")
+				accuracy = self.clfs[i].evaluate(self.clfs[i].tfidf)
+				print(f"Accuracy of tree {i + 1}: {accuracy}%")
+		except:
+			print("Error testing: unable to start thread")
 
-	def readExcelFile(self):
-		pass
-
-	def classify(self):
-		pass
-
-	def delete_data(self):
-		pass
-
-	def show_data(self):
-		pass
+	def optimizeModel(self, popSize, numIteration, c1, c2, target):
+		try:
+			for i in range(self.k):
+				self.clfs[i].optimize(popSize, numIteration, c1, c2, target)
+		except:
+			print("Error optimizing: unable to start thread")

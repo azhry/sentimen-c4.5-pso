@@ -1,6 +1,6 @@
 from core.Database import Database
 from libs.TFIDF_revision import TFIDF_revision
-from libs.PSO import PSO
+from libs.PSO_revision import PSO_revision
 from entities.Node import Node
 from math import log
 import numpy as np
@@ -155,18 +155,13 @@ class C45_revision():
 		return gain
 
 	def constructTree(self):
-		# self.db.multiplesql("DELETE FROM weights WHERE fold_number = " + str(self.foldNumber))
-		# self.db.multiplesql("DELETE FROM attributes WHERE fold_number = " + str(self.foldNumber))
-		# self.db.multiplesql("DELETE FROM tree_nodes WHERE fold_number = " + str(self.foldNumber))
-		# self.calculateTotalEntropy()
-		# self.calculateWeights()
-		# self.getDocumentsVector()
-		# self.getThresholdValue()
-
-		self.retrieveAttributes()
-		self.tfidf = TFIDF_revision(self.trainData, self.attributes)
-		self.tfidf.calculateIdf()
-		return self.evaluate(self.tfidf)
+		self.db.multiplesql("DELETE FROM weights WHERE fold_number = " + str(self.foldNumber))
+		self.db.multiplesql("DELETE FROM attributes WHERE fold_number = " + str(self.foldNumber))
+		self.db.multiplesql("DELETE FROM tree_nodes WHERE fold_number = " + str(self.foldNumber))
+		self.calculateTotalEntropy()
+		self.calculateWeights()
+		self.getDocumentsVector()
+		self.getThresholdValue()
 
 	def buildTree(self, attributes):
 		self.db.multiplesql("DELETE FROM tree_nodes WHERE fold_number = " + str(self.foldNumber))
@@ -222,7 +217,9 @@ class C45_revision():
 					return self.traverseChild(childNode, tfidf_val[childNode[2]] if childNode[2] in tfidf_val else 0, label, tfidf_val)
 
 
-	def optimize(self):
+	def optimize(self, populationSize, numIteration, c1, c2, target):
 		self.retrieveAttributes()
-		pso = PSO(len(self.attributes), 10, 10, 0.9, 0.9, 85)
-		pso.searchBestSolution(self)
+		pso = PSO_revision(len(self.attributes), populationSize, numIteration, c1, c2, target)
+		fittest = pso.exec(self)
+		print(f"Optimized tree {self.foldNumber} accuracy: {fittest.best}%")
+		print(f"Tree {self.foldNumber} removed attributes: {list(fittest.position).count(0)}")

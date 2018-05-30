@@ -114,6 +114,11 @@ class AppWindow(QMainWindow):
 
 	def renderTestingTab(self):
 		self.testC45GroupBox = QGroupBox("Test C4.5", self.testTabs)
+		testC45Layout = QFormLayout()
+		testC45Button = QPushButton("Test C4.5")
+		testC45Button.clicked.connect(self.testModel)
+		testC45Layout.addRow(testC45Button)
+		self.testC45GroupBox.setLayout(testC45Layout)
 		self.testC45GroupBox.move(440, 30)
 
 		self.attributeSelectionForm = QGroupBox("PSO Parameters", self.testTabs)
@@ -131,7 +136,16 @@ class AppWindow(QMainWindow):
 		attributeSelectionLayout.addRow(targetLabel, targetTextBox)
 		attributeSelectionLayout.addRow(c1Label, c1ValueTextBox)
 		attributeSelectionLayout.addRow(c2Label, c2ValueTextBox)
-		attributeSelectionLayout.addRow(QPushButton("Optimize C4.5"))
+		optimizeC45Button = QPushButton("Optimize C4.5")
+
+		popSize = int(popSizeTextBox.text())
+		numIteration = int(numIterationTextBox.text())
+		target = int(targetTextBox.text())
+		c1 = int(c1ValueTextBox.text())
+		c2 = int(c2ValueTextBox.text())
+		optimizeC45Button.clicked.connect(lambda: self.optimizeModel(popSize, numIteration, c1, c2, target))
+		
+		attributeSelectionLayout.addRow(optimizeC45Button)
 		self.attributeSelectionForm.setLayout(attributeSelectionLayout)
 
 		self.testingTable = QTableWidget(self.testTabs)
@@ -159,10 +173,10 @@ class AppWindow(QMainWindow):
 		self.mainControl.trainModel()
 
 	def testModel(self):
-		pass
+		self.mainControl.testModel()
 
-	def optimizeModel(self):
-		pass
+	def optimizeModel(self, populationSize, numIteration, c1, c2, target):
+		self.mainControl.optimizeModel(populationSize, numIteration, c1, c2, target)
 
 	def preprocessData(self):
 		try:
