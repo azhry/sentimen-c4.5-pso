@@ -1,0 +1,97 @@
+@startuml
+hide footbox
+title Melakukan Pengujian\n
+
+actor Peneliti
+boundary AppWindow
+control MainControl
+control C45
+control TFIDF
+entity "db : Database"
+
+activate Peneliti
+Peneliti -> AppWindow : testModel()
+activate AppWindow
+AppWindow -> MainControl : testModel()
+activate MainControl
+
+loop i < k
+MainControl -> C45 : evaluateModel()
+activate C45
+C45 -> C45 : retrieveAttributes()
+activate C45
+
+alt len(attributes) <= 0
+C45 -> "db : Database" : select("attributes where fold number = i")
+activate "db : Database"
+"db : Database" --> C45 : attributes
+deactivate "db : Database"
+else
+C45 -> C45 : constructAttributes()
+end
+deactivate C45
+
+create TFIDF
+C45 -> TFIDF : << TFIDF(trainData, attributes) >>
+C45 -> TFIDF : calculateIdf()
+activate TFIDF
+C45 -> C45 : evaluate(tfidf)
+deactivate TFIDF
+activate C45
+
+opt tree is None
+C45 -> "db : Database" : query("select tree nodes where fold number = i")
+activate "db : Database"
+"db : Database" --> C45 : tree
+deactivate "db : Database"
+end
+
+loop data in testData
+C45 -> C45 : traverseChild(node, weight, label, tfidf_val)
+activate C45
+
+opt nodeType equals "label"
+C45 --> C45 : nodeValue equals label
+end
+
+alt weight > threshold
+
+opt rightChild is available
+
+alt len(childNode) <= 0
+alt leftChild is available
+C45 -> C45 : traverseChild(node, weight, label, tfidf_val)
+else
+C45 --> C45 : False
+end
+else
+C45 -> C45 : traverseChild(node, weight, label, tfidf_val)
+end
+
+end
+
+else
+
+opt leftChild is available
+alt len(childNode) <= 0
+alt rightChild is available
+C45 -> C45 : traverseChild(node, weight, label, tfidf_val)
+else
+C45 --> C45 : False
+end
+else
+C45 -> C45 : traverseChild(node, weight, label, tfidf_val)
+end
+end
+
+end
+
+end
+
+deactivate C45
+C45 --> C45 : accuracy
+deactivate C45
+C45 --> MainControl : accuracy
+MainControl --> AppWindow : accuracy
+end
+@enduml

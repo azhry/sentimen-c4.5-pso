@@ -1,4 +1,5 @@
 from math import exp
+from entities.Particle import Particle
 import random
 import numpy as np
 
@@ -25,6 +26,9 @@ class PSO():
     # note: pBest = previous best position
     def initializePopulation(self):
     	return np.array([[[random.choice((0, 1)) for _ in range(self.particleSize)], [0 for _ in range(self.particleSize)], [0 for _ in range(self.particleSize)]] for _ in range(self.populationSize)])
+
+    def initPop(self):
+        return [Particle(self.particleSize) for _ in range(self.populationSize)]
 
     # boolean indexing: arr[int_arr.astype(bool)]
     def searchBestSolution(self, clf):
