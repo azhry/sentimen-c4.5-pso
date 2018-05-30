@@ -138,12 +138,7 @@ class AppWindow(QMainWindow):
 		attributeSelectionLayout.addRow(c2Label, c2ValueTextBox)
 		optimizeC45Button = QPushButton("Optimize C4.5")
 
-		popSize = int(popSizeTextBox.text())
-		numIteration = int(numIterationTextBox.text())
-		target = int(targetTextBox.text())
-		c1 = int(c1ValueTextBox.text())
-		c2 = int(c2ValueTextBox.text())
-		optimizeC45Button.clicked.connect(lambda: self.optimizeModel(popSize, numIteration, c1, c2, target))
+		optimizeC45Button.clicked.connect(lambda: self.optimizeModel(int(popSizeTextBox.text()), int(numIterationTextBox.text()), int(c1ValueTextBox.text()), int(c2ValueTextBox.text()), int(targetTextBox.text())))
 		
 		attributeSelectionLayout.addRow(optimizeC45Button)
 		self.attributeSelectionForm.setLayout(attributeSelectionLayout)
