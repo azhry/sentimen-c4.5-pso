@@ -17,9 +17,11 @@ class C45_revision():
 		self.db 			= Database("localhost", "root", "", "sentimen_test")
 		self.totalEntropy 	= 0
 		self.tree 			= None
+		self.accuracy		= 0
 
 	def constructAttributes(self):
 		self.db.multiplesql("DELETE FROM attributes WHERE fold_number = " + str(self.foldNumber))
+		self.attributes = list(self.attributes)
 		for review in self.trainData[:,1]:
 			attributes = review.split(" ")
 			self.attributes.extend(attributes)
@@ -32,8 +34,9 @@ class C45_revision():
 
 	def retrieveAttributes(self):
 		# check if attributes are already constructed before
-		if len(self.attributes) <= 0:
-			attributes = self.db.select("attributes", "fold_number = " + str(self.foldNumber))
+		attributes = self.db.select("attributes", "fold_number = " + str(self.foldNumber))
+		if len(attributes) > 0:
+			self.attributes = []
 			for attr in attributes:
 				self.excludedData[attr[1]] = []
 				self.attributes.append(attr[1])
@@ -129,6 +132,63 @@ class C45_revision():
 					leftData.extend(excludedData)
 					self.getThresholdValue(leftData, insertId, "right")
 				
+	# PSO version for training, will be refactored later
+	def getOptimizedThresholdValue(self, attributes, excludedData = [], parentNodeId = None, direction = "left"):
+		attributeThresholds = []
+		for _, attribute in enumerate(attributes):
+			thresholds = self.getPossibleThresholds(attribute, excludedData)
+			thresholdGain = []
+
+			for threshold in thresholds:
+				gain = self.calculateAttributeGain(attribute, threshold, excludedData)
+				thresholdGain.append([threshold, gain])
+			
+			if len(thresholdGain) > 0:
+				thresholdGain = sorted(thresholdGain, key = lambda x: x[1], reverse = True)
+				attributeThreshold = [attribute]
+				attributeThreshold.extend(thresholdGain[0])
+				attributeThresholds.append(attributeThreshold)
+			else:
+				pass
+				# print(attribute + " does not have any threshold possible")
+		
+		attributeThresholds = sorted(attributeThresholds, key = lambda x: x[2], reverse = True)
+		if len(attributeThresholds) > 0:
+			selectedAttribute = attributeThresholds[0]
+			
+			nodeType = "root" if self.tree is None else "attribute"
+			insertId = 0
+			if self.tree is None:
+				self.tree = True
+				self.db.multiplesql("INSERT INTO tree_nodes(type, value, threshold, fold_number) VALUES('" + nodeType + "', '" + selectedAttribute[0] + "', " + str(selectedAttribute[1]) + ", " + str(self.foldNumber) + ")")
+				insertId = self.db.insert_id()
+			else:
+				self.db.multiplesql("INSERT INTO tree_nodes(type, value, threshold, fold_number) VALUES('" + nodeType + "', '" + selectedAttribute[0] + "', " + str(selectedAttribute[1]) + ", " + str(self.foldNumber) + ")")
+				insertId = self.db.insert_id()
+				if direction == "left":
+					self.db.multiplesql("UPDATE tree_nodes SET left_node = " + str(insertId) + " WHERE node_id = " + str(parentNodeId))
+				elif direction == "right":
+					self.db.multiplesql("UPDATE tree_nodes SET right_node = " + str(insertId) + " WHERE node_id = " + str(parentNodeId))
+
+			left, right, leftData, rightData = self.getChildNodes(selectedAttribute[0], selectedAttribute[1], excludedData)
+			leftDataCount = len(leftData)
+			rightDataCount = len(rightData)
+
+			leftUnique, leftCounts = np.unique(left, return_counts = True)
+			rightUnique, rightCounts = np.unique(right, return_counts = True)
+
+			labels = np.append(leftUnique, rightUnique)
+
+			if len(np.unique(labels)) == 1:
+				self.db.multiplesql("UPDATE tree_nodes SET type = 'label', value = '" + labels[0] + "' WHERE node_id = " + str(insertId))
+			else:
+				if leftDataCount > 0:
+					rightData.extend(excludedData)
+					self.getOptimizedThresholdValue(attributes, rightData, insertId, "left")
+
+				if rightDataCount > 0:
+					leftData.extend(excludedData)
+					self.getOptimizedThresholdValue(attributes, leftData, insertId, "right")
 
 	def getChildNodes(self, attribute, threshold, excludedData = []):
 		leftData = [x[0] for x in self.data if x[1] == attribute and x[2] <= threshold and x[0] not in excludedData]
@@ -163,6 +223,11 @@ class C45_revision():
 		self.getDocumentsVector()
 		self.getThresholdValue()
 
+	def constructOptimizedTree(self, selectedAttributes):
+		self.db.multiplesql("DELETE FROM tree_nodes WHERE fold_number = " + str(self.foldNumber))
+		self.tree = None
+		self.getOptimizedThresholdValue(selectedAttributes)
+
 	def buildTree(self, attributes):
 		self.db.multiplesql("DELETE FROM tree_nodes WHERE fold_number = " + str(self.foldNumber))
 		self.tree = None
@@ -178,6 +243,9 @@ class C45_revision():
 		correct, incorrect = 0, 0
 		if self.tree == True or self.tree is None:
 			self.tree = self.db.query("SELECT * FROM tree_nodes WHERE fold_number = " + str(self.foldNumber))
+
+		if len(self.tree) <= 0:
+			return 0
 
 		for data in self.testData:
 			tokens = data[1].split(" ")
@@ -219,7 +287,7 @@ class C45_revision():
 
 	def optimize(self, populationSize, numIteration, c1, c2, target):
 		self.retrieveAttributes()
-		pso = PSO_revision(len(self.attributes), populationSize, numIteration, c1, c2, target)
+		pso = PSO_revision(len(self.attributes), populationSize, numIteration, c1, c2, self.accuracy)
 		fittest = pso.exec(self)
 		print(f"Optimized tree {self.foldNumber} accuracy: {fittest.best}%")
 		print(f"Tree {self.foldNumber} removed attributes: {list(fittest.position).count(0)}")

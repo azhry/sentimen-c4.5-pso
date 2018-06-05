@@ -79,14 +79,11 @@ class MainControl():
 		try:
 			for i in range(self.k):
 				print(f"Testing tree {i + 1}")
-				accuracy = self.clfs[i].evaluate(self.clfs[i].tfidf)
-				print(f"Accuracy of tree {i + 1}: {accuracy}%")
+				self.clfs[i].accuracy = self.clfs[i].evaluate(self.clfs[i].tfidf)
+				print(f"Accuracy of tree {i + 1}: {self.clfs[i].accuracy}%")
 		except:
 			print("Error testing: unable to start thread")
 
 	def optimizeModel(self, popSize, numIteration, c1, c2, target):
-		try:
-			for i in range(self.k):
-				self.clfs[i].optimize(popSize, numIteration, c1, c2, target)
-		except:
-			print("Error optimizing: unable to start thread")
+		for i in range(self.k):
+			self.clfs[i].optimize(popSize, numIteration, c1, c2, target)
