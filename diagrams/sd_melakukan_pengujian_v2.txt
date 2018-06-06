@@ -1,0 +1,78 @@
+@startuml
+hide footbox
+title Melakukan Pengujian\n
+
+actor Peneliti
+boundary AppWindow
+control MainControl
+control C45
+control TFIDF
+
+activate Peneliti
+Peneliti -> AppWindow : testModel()
+activate AppWindow
+AppWindow -> MainControl : testModel()
+activate MainControl
+
+loop i < k
+MainControl -> C45 : evaluate(docVector)
+activate C45
+
+loop data in testData
+
+loop token in tokens
+C45 -> TFIDF : tf(token, data)
+activate C45
+activate TFIDF
+TFIDF --> C45 : tfidf_val
+deactivate TFIDF
+deactivate C45
+end
+
+C45 -> C45 : traverseChild(node, weight, label, tfidf_val)
+activate C45
+
+opt nodeType equals "label"
+C45 --> C45 : nodeValue equals label
+end
+
+alt weight > threshold
+
+opt rightChild is available
+
+alt len(childNode) <= 0
+alt leftChild is available
+C45 -> C45 : traverseChild(node, weight, label, tfidf_val)
+else
+C45 --> C45 : False
+end
+else
+C45 -> C45 : traverseChild(node, weight, label, tfidf_val)
+end
+
+end
+
+else
+
+opt leftChild is available
+alt len(childNode) <= 0
+alt rightChild is available
+C45 -> C45 : traverseChild(node, weight, label, tfidf_val)
+else
+C45 --> C45 : False
+end
+else
+C45 -> C45 : traverseChild(node, weight, label, tfidf_val)
+end
+end
+
+end
+
+end
+
+C45 --> MainControl : accuracy
+deactivate C45
+deactivate C45
+MainControl --> AppWindow : accuracy
+end
+@enduml

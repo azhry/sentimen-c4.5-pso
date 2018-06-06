@@ -1,0 +1,85 @@
+@startuml
+hide footbox
+title Seleksi Atribut menggunakan PSO\n
+
+actor Peneliti
+boundary AppWindow
+control MainControl
+control C45
+control PSO
+entity Particle
+entity "db : Database"
+
+activate Peneliti
+Peneliti -> AppWindow : optimizeModel()
+activate AppWindow
+AppWindow -> MainControl : optimizeModel(popSize, \nnumIter, c1, c2, target)
+activate MainControl
+
+loop i < k
+MainControl -> C45 : optimize(popSize, \nnumIter, c1, c2, target)
+activate C45
+C45 -> C45 : retrieveAttributes()
+activate C45
+
+alt len(attributes) <= 0
+C45 -> "db : Database" : select("attributes where fold number = i")
+activate "db : Database"
+"db : Database" --> C45 : attributes
+deactivate "db : Database"
+else
+C45 -> C45 : constructAttributes()
+end
+deactivate C45
+
+create PSO
+C45 -> PSO : << PSO(pSize, popSize, \nnumIter, c1, c2, target) >>
+activate PSO
+
+loop i < popSize
+create Particle
+PSO -> Particle : << Particle(pSize) >>
+deactivate PSO
+end
+
+C45 -> PSO : exec(classifier)
+activate PSO
+
+loop j < numIter
+
+loop k < popSize
+PSO -> Particle : calculateBest(classifier)
+activate Particle
+Particle -> C45 : constructOptimizedTree(attributes)
+Particle -> C45 : evaluate(tfidf)
+C45 --> Particle : accuracy
+PSO -> Particle : chaoticTentMap()
+deactivate Particle
+end
+
+alt gBest > target
+PSO --> C45 : particleBest
+end
+
+loop k < popSize
+PSO -> Particle : updateVelocity(c1, c2, particleBest)
+activate Particle
+loop l < pSize
+Particle -> Particle : calculateVelocity(v0, c1, c2, px, pbx, x)
+activate Particle
+Particle --> Particle : velocity
+deactivate Particle
+end
+PSO -> Particle : updatePosition()
+deactivate Particle
+end
+
+end
+
+PSO --> C45 : particleBest
+deactivate PSO
+C45 --> MainControl : particleBest
+end
+
+MainControl --> AppWindow : particlesBest
+@enduml
