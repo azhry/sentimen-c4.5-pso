@@ -13,14 +13,14 @@ class Particle:
 		self.currBestPosition = self.position
 		self.inertiaWeight = random.uniform(0, 1)
 
-	def updateVelocity(self, c1, c2, r1, r2, particleBestPosition):
-		self.velocity = np.array([self.calculateVelocity(v, c1, c2, r1, r2, px, pbx, x) for v, px, x, pbx in zip(self.velocity, self.position, self.currBestPosition, particleBestPosition)])
+	def updateVelocity(self, c1, c2, particleBestPosition):
+		self.velocity = np.array([self.calculateVelocity(v, c1, c2, px, pbx, x) for v, px, x, pbx in zip(self.velocity, self.position, self.currBestPosition, particleBestPosition)])
 
-	def updatePosition(self, r3):
-		self.position = np.array([(1 if self.sigmoid(v) > r3 else 0) for v in self.velocity])
+	def updatePosition(self):
+		self.position = np.array([(1 if self.sigmoid(v) > random.uniform(0, 1) else 0) for v in self.velocity])
 
-	def calculateVelocity(self, v0, c1, c2, r1, r2, px, pbx, x):
-		return self.inertiaWeight * v0 + c1 * r1 * (px - pbx) + c2 * r2 * (px - x)
+	def calculateVelocity(self, v0, c1, c2, px, pbx, x):
+		return self.inertiaWeight * v0 + c1 * random.uniform(0, 1) * (px - pbx) + c2 * random.uniform(0, 1) * (px - x)
 
 	def sigmoid(self, v):
 		if v < 0:

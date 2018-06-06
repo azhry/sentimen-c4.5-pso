@@ -3,6 +3,7 @@ from libs.TFIDF_revision import TFIDF_revision
 from libs.PSO_revision import PSO_revision
 from entities.Node import Node
 from math import log
+from PyQt5.QtWidgets import QApplication
 import numpy as np
 
 class C45_revision():
@@ -18,6 +19,7 @@ class C45_revision():
 		self.totalEntropy 	= 0
 		self.tree 			= None
 		self.accuracy		= 0
+		self.UI 			= None
 
 	def constructAttributes(self):
 		self.db.multiplesql("DELETE FROM attributes WHERE fold_number = " + str(self.foldNumber))
@@ -50,8 +52,8 @@ class C45_revision():
 		self.constructAttributes()
 
 		self.tfidf = TFIDF_revision(self.trainData, self.attributes)
-		self.tfidf.calculateTfIdf()
-		self.tfidf.saveWeight(self.foldNumber)
+		self.tfidf.calculateTfIdf(self.UI)
+		self.tfidf.saveWeight(self.foldNumber, self.UI)
 
 	def calculateTotalEntropy(self):
 		data = self.db.query("SELECT label, COUNT(id) AS total FROM preprocessed_data WHERE fold_number = " + str(self.foldNumber) + " GROUP BY label")
@@ -214,7 +216,12 @@ class C45_revision():
 		gain = self.totalEntropy - info
 		return gain
 
-	def constructTree(self):
+	def constructTree(self, UI = None):
+		self.UI = UI
+		if self.UI is not None:
+			self.UI.logOutput.append(f"Constructing tree {self.foldNumber}")
+			QApplication.processEvents()
+
 		self.db.multiplesql("DELETE FROM weights WHERE fold_number = " + str(self.foldNumber))
 		self.db.multiplesql("DELETE FROM attributes WHERE fold_number = " + str(self.foldNumber))
 		self.db.multiplesql("DELETE FROM tree_nodes WHERE fold_number = " + str(self.foldNumber))
@@ -291,3 +298,5 @@ class C45_revision():
 		fittest = pso.exec(self)
 		print(f"Optimized tree {self.foldNumber} accuracy: {fittest.best}%")
 		print(f"Tree {self.foldNumber} removed attributes: {list(fittest.position).count(0)}")
+		print(f"{fittest.position}")
+		return fittest

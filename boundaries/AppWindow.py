@@ -23,26 +23,8 @@ class AppWindow(QMainWindow):
 		self.setGeometry(self.left, self.top, self.width, self.height)
 		self.renderMenuBar()
 		self.renderTabs()
-		
-		self.tableWidget = QTableWidget(self.ETLTabs)
-		self.tableWidget.resize(490, 300)
-		self.tableWidget.move(10, 30)
-		
-		self.preprocessButton = QPushButton("Preprocess", self.ETLTabs)
-		self.preprocessButton.move(520, 140)
-		self.preprocessButton.clicked.connect(self.preprocessData)
-		
-		self.saveDataButton = QPushButton("Save Data", self.ETLTabs)
-		self.saveDataButton.move(520, 180)
-		self.saveDataButton.clicked.connect(self.saveData)
-	
-		self.positiveLabelCount = QLabel("Positive: -", self.ETLTabs)
-		self.positiveLabelCount.move(10, 345)
-		self.negativeLabelCount = QLabel("Negative: -", self.ETLTabs)
-		self.negativeLabelCount.move(150, 345)
-		self.neutralLabelCount = QLabel("Neutral: -", self.ETLTabs)
-		self.neutralLabelCount.move(290, 345)
 
+		self.renderETLTab()
 		self.renderTrainingTab()
 		self.renderTestingTab()
 
@@ -69,7 +51,24 @@ class AppWindow(QMainWindow):
 		self.tabs.addTab(self.testTabs, "Testing")
 
 	def renderETLTab(self):
-		pass
+		self.tableWidget = QTableWidget(self.ETLTabs)
+		self.tableWidget.resize(490, 300)
+		self.tableWidget.move(10, 30)
+		
+		self.preprocessButton = QPushButton("Preprocess", self.ETLTabs)
+		self.preprocessButton.move(520, 140)
+		self.preprocessButton.clicked.connect(self.preprocessData)
+		
+		self.saveDataButton = QPushButton("Save Data", self.ETLTabs)
+		self.saveDataButton.move(520, 180)
+		self.saveDataButton.clicked.connect(self.saveData)
+	
+		self.positiveLabelCount = QLabel("Positive: -", self.ETLTabs)
+		self.positiveLabelCount.move(10, 345)
+		self.negativeLabelCount = QLabel("Negative: -", self.ETLTabs)
+		self.negativeLabelCount.move(150, 345)
+		self.neutralLabelCount = QLabel("Neutral: -", self.ETLTabs)
+		self.neutralLabelCount.move(290, 345)
 
 	def renderTrainingTab(self):
 
@@ -162,18 +161,32 @@ class AppWindow(QMainWindow):
 
 	def foldData(self, k):
 		self.mainControl.foldData(k, self)
+		self.testingTable.setRowCount(k)
+		self.testingTable.setColumnCount(4)
+		self.testingTable.setHorizontalHeaderLabels(["Attrs", "C4.5", "C4.5 - PSO", "Removed Attrs"])
+		tableHeader = self.testingTable.horizontalHeader()
+		tableHeader.setSectionResizeMode(0, QHeaderView.Stretch)
 
 	def saveData(self):
 		self.mainControl.saveData()
 
 	def trainModel(self):
-		self.mainControl.trainModel()
+		clfs = self.mainControl.trainModel(self)
+		if clfs is not None:
+			for clf in clfs:
+				self.testingTable.setItem(clf.foldNumber - 1, 0, QTableWidgetItem(f"{len(clf.attributes)}"))
 
 	def testModel(self):
-		self.mainControl.testModel()
+		clfs = self.mainControl.testModel()
+		if clfs is not None:
+			for clf in clfs:
+				self.testingTable.setItem(clf.foldNumber - 1, 1, QTableWidgetItem(f"{round(clf.accuracy, 2)}%"))
 
 	def optimizeModel(self, populationSize, numIteration, c1, c2, target):
-		self.mainControl.optimizeModel(populationSize, numIteration, c1, c2, target)
+		results = self.mainControl.optimizeModel(populationSize, numIteration, c1, c2, target)
+		for result in results:
+			self.testingTable.setItem(result[0] - 1, 2, QTableWidgetItem(f"{round(result[1].best, 2)}%"))
+			self.testingTable.setItem(result[0] - 1, 3, QTableWidgetItem(f"{list(result[1].position).count(0)}"))
 
 	def viewData(self, kth, dstype):
 		data = self.mainControl.getData(kth, dstype)

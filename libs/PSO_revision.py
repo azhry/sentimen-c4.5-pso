@@ -14,7 +14,6 @@ class PSO_revision:
 		self.particles = [Particle(self.particleSize) for _ in range(self.populationSize)]
 
 	def exec(self, clf):
-		r1, r2, r3 = [random.uniform(0, 1) for _ in range(3)]
 		print(f"Optimizing tree {clf.foldNumber}")
 		for _ in range(self.numIteration):
 			print(f"Iteration {_}")
@@ -31,6 +30,6 @@ class PSO_revision:
 				return self.particles[0]
 			
 			for i in range(self.populationSize):
-				self.particles[i].updateVelocity(self.c1, self.c2, r1, r2, self.particles[0].position)
-				self.particles[i].updatePosition(r3)
+				self.particles[i].updateVelocity(self.c1, self.c2, self.particles[0].position)
+				self.particles[i].updatePosition()
 		return self.particles[0]

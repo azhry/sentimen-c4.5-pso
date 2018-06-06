@@ -1,5 +1,6 @@
 from math import log
 from core.Database import Database
+from PyQt5.QtWidgets import QApplication
 
 class TFIDF_revision():
 
@@ -25,18 +26,24 @@ class TFIDF_revision():
 			else:
 				self.idf[term] = 1.0
 
-	def calculateTfIdf(self):
+	def calculateTfIdf(self, UI = None):
 		self.calculateIdf()
 		self.weights = []
-		for document in self.documents:
+		for i, document in enumerate(self.documents):
+			if UI is not None:
+				UI.logOutput.append(f"TFIDF-ing review {i + 1}")
+				QApplication.processEvents()
 			weight = {}
 			for term in self.terms:
 				weight[term] = self.tf(term, document[1]) * self.idf[term]
 			self.weights.append({ "id_document": document[0], "weight": weight })
 		return self.weights
 
-	def saveWeight(self, foldNumber):
-		for weight in self.weights:
+	def saveWeight(self, foldNumber, UI = None):
+		for i, weight in enumerate(self.weights):
+			if UI is not None:
+				UI.logOutput.append(f"Saving weights of review {i + 1}")
+				QApplication.processEvents()
 			sql = "INSERT INTO weights(id_document, attribute, weight, fold_number) VALUES"
 			termWeight = weight["weight"].items()
 			twlen = len(termWeight)
