@@ -46,19 +46,22 @@ class MainControl():
 				sql += ","
 		self.db.multiplesql(sql)
 
-	def foldData(self, k):
+	def foldData(self, k, UI = None):
 		self.k = k
-		data = list(self.db.select("preprocessed_data"))
-		random.shuffle(data)
-		foldedData = np.array(np.array_split(data, k))
+		self.data = list(self.db.select("preprocessed_data"))
+		random.shuffle(self.data)
+		foldedData = np.array(np.array_split(self.data, k))
 		for i, data in enumerate(foldedData):
 			ids = ",".join([str(x) for x in data[:,0]])
 			sql = "UPDATE preprocessed_data SET fold_number = " + str(i + 1) + " WHERE id IN (" + ids + ");"
 			self.db.multiplesql(sql)
+		if UI is not None:
+			UI.logOutput.append(f"Data folded by {k}")
 		return foldedData
 
 	def trainModel(self):
-		data = list(self.db.select("preprocessed_data"))
+		if self.data is None:
+			self.data = list(self.db.select("preprocessed_data"))
 		self.clfs = []
 		threads = []
 		try:
@@ -87,3 +90,21 @@ class MainControl():
 	def optimizeModel(self, popSize, numIteration, c1, c2, target):
 		for i in range(self.k):
 			self.clfs[i].optimize(popSize, numIteration, c1, c2, target)
+
+	def getData(self, kth, dstype):
+		if kth > self.k or kth <= 0:
+			msg = QMessageBox()
+			msg.setIcon(QMessageBox.Warning)
+			msg.setWindowTitle("Error")
+			msg.setText("Anda harus memasukkan nilai k yang valid")
+			msg.setStandardButtons(QMessageBox.Ok)
+			msg.exec_()
+			return None
+		else:			
+			if self.data is None:
+				self.data = self.db.select("preprocessed_data")
+			if dstype == "Training Data":
+				return list(filter(lambda row: row[3] != kth, self.data))
+			elif dstype == "Testing Data":
+				return list(filter(lambda row: row[3] == kth, self.data))
+			return None

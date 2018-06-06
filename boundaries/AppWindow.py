@@ -2,6 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from controls.MainControl import MainControl
 from libs.TF_IDF import TF_IDF
+import datetime
 
 class AppWindow(QMainWindow):
 
@@ -49,8 +50,8 @@ class AppWindow(QMainWindow):
 		self.logOutput.setReadOnly(True)
 		self.logOutput.resize(620, 90)
 		self.logOutput.move(10, 460)
-		self.logOutput.insertPlainText("Process log here..")
-		self.logOutput.append("Process log #2")
+		logDate = datetime.datetime.now().strftime("%I:%M %p, %d %B %Y")
+		self.logOutput.insertPlainText(f"Log {logDate}")
 
 		self.show()
 
@@ -95,6 +96,7 @@ class AppWindow(QMainWindow):
 		dataTypeComboBox.addItem("Testing Data")
 		viewDataLayout.addRow(QLabel("Type"), dataTypeComboBox)
 		viewDataButton = QPushButton("View Data")
+		viewDataButton.clicked.connect(lambda: self.viewData(int(kNumTextBox.text()), dataTypeComboBox.currentText()))
 		viewDataLayout.addRow(viewDataButton)
 		self.viewDataGroupBox.setLayout(viewDataLayout)
 
@@ -159,7 +161,7 @@ class AppWindow(QMainWindow):
 		fileMenu.addMenu(impMenu)
 
 	def foldData(self, k):
-		self.mainControl.foldData(k)
+		self.mainControl.foldData(k, self)
 
 	def saveData(self):
 		self.mainControl.saveData()
@@ -172,6 +174,20 @@ class AppWindow(QMainWindow):
 
 	def optimizeModel(self, populationSize, numIteration, c1, c2, target):
 		self.mainControl.optimizeModel(populationSize, numIteration, c1, c2, target)
+
+	def viewData(self, kth, dstype):
+		data = self.mainControl.getData(kth, dstype)
+		self.trainingTable.setRowCount(len(data))
+		self.trainingTable.setColumnCount(2)
+		self.trainingTable.setHorizontalHeaderLabels(["Review", "Label"])
+		tableHeader = self.trainingTable.horizontalHeader()
+		tableHeader.setSectionResizeMode(0, QHeaderView.Stretch)
+		i = 0
+		for row in data:
+			self.trainingTable.setItem(i, 0, QTableWidgetItem(row[1]))
+			self.trainingTable.setItem(i, 1, QTableWidgetItem(row[2]))
+			i += 1
+		self.trainingTable.show()
 
 	def preprocessData(self):
 		try:
