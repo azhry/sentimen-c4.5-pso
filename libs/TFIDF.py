@@ -1,12 +1,12 @@
 from math import log
-from core.Database import Database
+from core.Connection import Connection
 from PyQt5.QtWidgets import QApplication
 
-class TFIDF_revision():
+class TFIDF:
 
 	def __init__(self, documents, terms):
 		self.documents 	= documents
-		self.db 	 	= Database("localhost", "root", "", "sentimen_test")
+		self.db 	 	= Connection.db
 		self.terms		= terms
 		self.idf 		= {}
 

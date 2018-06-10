@@ -22,6 +22,3 @@ class DataImporter():
 
 	def get_data(self):
 		return self.df
-
-	def create_excels(self, documents):
-		pass

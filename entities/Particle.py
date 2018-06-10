@@ -1,7 +1,6 @@
 import numpy as np
-import random
-import math
-from libs.TFIDF_revision import TFIDF_revision
+import random, math
+from libs.TFIDF import TFIDF
 
 class Particle:
 
@@ -29,7 +28,7 @@ class Particle:
 
 	def calculateBest(self, clf):
 		attributes = np.array(clf.attributes)[self.position.astype(bool)]
-		tfidf = TFIDF_revision(clf.trainData, attributes)
+		tfidf = TFIDF(clf.trainData, attributes)
 		tfidf.calculateIdf()
 		clf.constructOptimizedTree(attributes)
 		self.best = clf.evaluate(tfidf)

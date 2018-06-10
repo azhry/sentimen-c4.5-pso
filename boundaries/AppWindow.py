@@ -1,7 +1,6 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from controls.MainControl import MainControl
-from libs.TF_IDF import TF_IDF
 import datetime
 
 class AppWindow(QMainWindow):
@@ -151,13 +150,9 @@ class AppWindow(QMainWindow):
 	def renderMenuBar(self):
 		menuBar = self.menuBar()
 		fileMenu = menuBar.addMenu("File")
-		impMenu = QMenu("Import", self)
-		impAct = QAction("Import Excel", self)
-		impAct.triggered.connect(self.importExcel)
-		impMenu.addAction(impAct)
-		newAct = QAction("New", self)
-		fileMenu.addAction(newAct)
-		fileMenu.addMenu(impMenu)
+		importExcelMenu = QAction("Import Excel", self)
+		importExcelMenu.triggered.connect(self.importExcel)
+		fileMenu.addAction(importExcelMenu)
 
 	def foldData(self, k):
 		self.mainControl.foldData(k, self)
@@ -217,6 +212,7 @@ class AppWindow(QMainWindow):
 		self.data = self.mainControl.importExcel(self)
 		if self.data is not None:
 			self.renderTable(self.data)
+		self.logOutput.append("Data imported")
 
 	def renderTable(self, data):
 		try:
@@ -229,6 +225,7 @@ class AppWindow(QMainWindow):
 			i = 0
 			for review, label in zip(data["Review"], data["Label"]):
 				self.tableWidget.setItem(i, 0, QTableWidgetItem(review))
+				# self.tableWidget.item(i, 0).setBackground(QColor(125, 125, 125))
 				self.tableWidget.setItem(i, 1, QTableWidgetItem(label))
 				i += 1
 			self.tableWidget.show()
