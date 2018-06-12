@@ -10,8 +10,6 @@ class C45:
 	def __init__(self, trainData, testData, foldNumber = 0):
 		self.trainData 		= np.array(trainData)
 		self.testData		= np.array(testData)
-		self.termData		= {}
-		self.excludedData	= {}
 		self.foldNumber 	= foldNumber
 		self.attributes 	= []
 		self.db 			= Connection.db
@@ -29,7 +27,6 @@ class C45:
 
 		self.attributes = set(self.attributes)
 		for attribute in self.attributes:
-			self.excludedData[attribute] = []
 			sql = "INSERT INTO attributes(attribute, active, fold_number) VALUES('" + attribute + "', 1, " + str(self.foldNumber) + ")"
 			self.db.multiplesql(sql)
 
@@ -39,7 +36,6 @@ class C45:
 		if len(attributes) > 0:
 			self.attributes = []
 			for attr in attributes:
-				self.excludedData[attr[1]] = []
 				self.attributes.append(attr[1])
 		
 		# otherwise construct new attributes
@@ -76,21 +72,20 @@ class C45:
 
 	def getThresholdValue(self, excludedData = [], parentNodeId = None, direction = "left"):
 		attributeThresholds = []
-		for _, attribute in enumerate(self.attributes):
+		for attribute in self.attributes:
 			thresholds = self.getPossibleThresholds(attribute, excludedData)
-			thresholdGain = []
+			if len(thresholds) <= 0:
+				continue
 
+			thresholdGain = []
 			for threshold in thresholds:
 				gain = self.calculateAttributeGain(attribute, threshold, excludedData)
 				thresholdGain.append([threshold, gain])
 			
-			if len(thresholdGain) > 0:
-				thresholdGain = sorted(thresholdGain, key = lambda x: x[1], reverse = True)
-				attributeThreshold = [attribute]
-				attributeThreshold.extend(thresholdGain[0])
-				attributeThresholds.append(attributeThreshold)
-			else:
-				print(attribute + " does not have any threshold possible")
+			thresholdGain = sorted(thresholdGain, key = lambda x: x[1], reverse = True)
+			attributeThreshold = [attribute]
+			attributeThreshold.extend(thresholdGain[0])
+			attributeThresholds.append(attributeThreshold)
 		
 		attributeThresholds = sorted(attributeThresholds, key = lambda x: x[2], reverse = True)
 		if len(attributeThresholds) > 0:
@@ -146,8 +141,7 @@ class C45:
 				attributeThreshold.extend(thresholdGain[0])
 				attributeThresholds.append(attributeThreshold)
 			else:
-				pass
-				# print(attribute + " does not have any threshold possible")
+				print(attribute + " does not have any threshold possible")
 		
 		attributeThresholds = sorted(attributeThresholds, key = lambda x: x[2], reverse = True)
 		if len(attributeThresholds) > 0:
@@ -250,7 +244,7 @@ class C45:
 			else:
 				incorrect += 1
 
-		return correct / (correct + incorrect) * 100 # accuracy percentage
+		return correct / (correct + incorrect) * 100 # accuracy
 
 	def traverseChild(self, node, weight, label, tfidf_val):
 		if node[1] == "label":

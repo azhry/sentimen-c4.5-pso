@@ -225,7 +225,6 @@ class AppWindow(QMainWindow):
 			i = 0
 			for review, label in zip(data["Review"], data["Label"]):
 				self.tableWidget.setItem(i, 0, QTableWidgetItem(review))
-				# self.tableWidget.item(i, 0).setBackground(QColor(125, 125, 125))
 				self.tableWidget.setItem(i, 1, QTableWidgetItem(label))
 				i += 1
 			self.tableWidget.show()

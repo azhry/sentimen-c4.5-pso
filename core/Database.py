@@ -60,12 +60,6 @@ class Database():
 			self.db.rollback()
 
 
-	def update(self, table, data, condition):
-		pass
-
-	def delete(self, table, condition):
-		pass
-
 	def clean(self, table):
 		sql = "DELETE FROM %s" % table
 		try:

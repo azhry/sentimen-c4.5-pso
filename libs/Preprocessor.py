@@ -6,7 +6,6 @@ class Preprocessor():
 	def __init__(self, stopword_path, correct_words_path):
 		with open(stopword_path) as f:
 			self.stopwords = f.read().splitlines()
-		self.correct_words = json.load(open(correct_words_path))
 		factory = StemmerFactory()
 		self.stemmer = factory.create_stemmer()
 
@@ -21,6 +20,3 @@ class Preprocessor():
 
 	def preprocess(self, str):
 		return self.removing_stopwords(self.tokenizing(self.stemming(str)))
-
-	def cleaning(self, str):
-		pass
