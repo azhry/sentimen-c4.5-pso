@@ -149,10 +149,10 @@ class AppWindow(QMainWindow):
 
 	def renderMenuBar(self):
 		menuBar = self.menuBar()
-		fileMenu = menuBar.addMenu("File")
-		importExcelMenu = QAction("Import Excel", self)
-		importExcelMenu.triggered.connect(self.importExcel)
-		fileMenu.addAction(importExcelMenu)
+		self.fileMenu = menuBar.addMenu("File")
+		self.importExcelMenu = QAction("Import Excel", self)
+		self.importExcelMenu.triggered.connect(self.importExcel)
+		self.fileMenu.addAction(self.importExcelMenu)
 
 	def foldData(self, k):
 		self.mainControl.foldData(k, self)
@@ -230,10 +230,10 @@ class AppWindow(QMainWindow):
 			self.tableWidget.show()
 			self.statusBar().showMessage("Data imported")
 		except:
-			msg = QMessageBox()
-			msg.setIcon(QMessageBox.Warning)
-			msg.setWindowTitle("Error")
-			msg.setText("File tidak memiliki kolom Review dan Label")
-			msg.setStandardButtons(QMessageBox.Ok)
-			msg.exec_()
+			self.msg = QMessageBox()
+			self.msg.setIcon(QMessageBox.Warning)
+			self.msg.setWindowTitle("Warning")
+			self.msg.setText("File tidak memiliki kolom Review dan Label")
+			self.msg.setStandardButtons(QMessageBox.Ok)
+			self.msg.show()
 			self.statusBar().showMessage("Import failed")

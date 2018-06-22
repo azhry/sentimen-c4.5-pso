@@ -22,7 +22,7 @@ class TFIDF:
 				if term in document[1].split(" "):
 					termCount += 1
 			if termCount > 0:
-				self.idf[term] = 1.0 + log(float(dlen) / termCount)
+				self.idf[term] = 1.0 + log(float(dlen) / termCount, 10)
 			else:
 				self.idf[term] = 1.0
 

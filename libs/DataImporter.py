@@ -1,6 +1,4 @@
 import pandas as pd
-from helpers.Preprocessor import tokenizing, get_stopwords, stopword_removal, stemming
-from helpers.Path import relative_path
 
 class DataImporter():
 
