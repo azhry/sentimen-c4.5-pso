@@ -1,5 +1,6 @@
-import sys 
-sys.path.append('..')
+import sys, os
+cwd = os.getcwd().split("\\")
+sys.path.append(".." if cwd[-1] == "tests" else "tests/..")
 
 from boundaries.AppWindow import AppWindow
 from libs.DataImporter import DataImporter
