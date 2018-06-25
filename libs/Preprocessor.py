@@ -8,9 +8,15 @@ class Preprocessor():
 			self.stopwords = f.read().splitlines()
 		factory = StemmerFactory()
 		self.stemmer = factory.create_stemmer()
+		self.specialCase = {
+			"dipesan": "pesan"
+		}
 
-	def stemming(self, str):
-		return self.stemmer.stem(str)
+	def casefolding(self, str):
+		return str.lower()
+
+	def stemming(self, word):
+		return self.stemmer.stem_word(word)
 
 	def tokenizing(self, str, delimiter = " "):
 		return str.split(delimiter)
@@ -19,4 +25,4 @@ class Preprocessor():
 		return [token for token in tokens if token not in self.stopwords]
 
 	def preprocess(self, str):
-		return self.removing_stopwords(self.tokenizing(self.stemming(str)))
+		return self.removing_stopwords([self.stemming(word) if word not in self.specialCase else self.specialCase[word] for word in self.tokenizing(self.casefolding(str))])

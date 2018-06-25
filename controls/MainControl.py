@@ -23,12 +23,21 @@ class MainControl():
 		return self.openFileDialog(UI)
 
 	def openFileDialog(self, UI):
-		options = QFileDialog.Options()
-		options |= QFileDialog.DontUseNativeDialog
-		fileName, _ = QFileDialog.getOpenFileName(UI, "Select Excel File", "", "Excel Files(*.xls *.xlsx)", options=options)
-		if (fileName):
-			importer = DataImporter(fileName)
-			return importer.get_data()
+		try:
+			options = QFileDialog.Options()
+			options |= QFileDialog.DontUseNativeDialog
+			fileName, _ = QFileDialog.getOpenFileName(UI, "Select Excel File", "", "Excel Files(*.xls *.xlsx)", options=options)
+			if (fileName):
+				importer = DataImporter(fileName)
+				return importer.get_data()
+		except:
+			UI.msg = QMessageBox()
+			UI.msg.setIcon(QMessageBox.Warning)
+			UI.msg.setWindowTitle("Warning")
+			UI.msg.setText("File tidak memiliki kolom Review dan Label")
+			UI.msg.setStandardButtons(QMessageBox.Ok)
+			UI.msg.show()
+			UI.statusBar().showMessage("Import failed")
 		return None
 
 	def preprocessData(self, UI, data):

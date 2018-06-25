@@ -1,6 +1,0 @@
-[
-  "AppWindow_test.py::test_importCorrectExcelFile",
-  "AppWindow_test.py::test_importExcelWithoutData",
-  "AppWindow_test.py::test_importExcelWithoutLabelColumn",
-  "AppWindow_test.py::test_importExcelWithoutReviewColumn"
-]
