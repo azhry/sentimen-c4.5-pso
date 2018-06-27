@@ -61,7 +61,7 @@ class Database():
 
 
 	def clean(self, table):
-		sql = "DELETE FROM %s" % table
+		sql = "TRUNCATE %s" % table
 		try:
 			self.cursor.execute(sql)
 			self.db.commit()

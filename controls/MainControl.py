@@ -5,15 +5,23 @@ from helpers.Path import relative_path
 from libs.C45 import C45
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-import random
+import random, sys, time
 import numpy as np
-import threading
-import time
 
 class MainControl():
 
-	def __init__(self):
+	def __init__(self, UI):
 		self.db = Connection.db
+		if not self.db:
+			UI.msg = QMessageBox()
+			UI.msg.setIcon(QMessageBox.Warning)
+			UI.msg.setWindowTitle("Error")
+			UI.msg.setText("Gagal koneksi ke basisdata")
+			UI.msg.setStandardButtons(QMessageBox.Ok)
+			UI.statusBar().showMessage("Database connection error")
+			if UI.msg.exec_() == QMessageBox.Ok:
+				sys.exit()
+
 		self.stopwordPath = relative_path("id.stopwords.txt")
 		self.correctWordsPath = relative_path("../libs/correct_words.json")
 		self.preprocessor = Preprocessor(self.stopwordPath, self.correctWordsPath)

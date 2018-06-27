@@ -3,7 +3,10 @@ import pandas as pd
 class DataImporter():
 
 	def __init__(self, filename):
-		self.df = pd.read_excel(filename)
+		try:
+			self.df = pd.read_excel(filename)
+		except:
+			self.df = None
 		self.labels = { "Positive": 0, "Negative": 0, "Neutral": 0 }
 
 	def count_labels(self):

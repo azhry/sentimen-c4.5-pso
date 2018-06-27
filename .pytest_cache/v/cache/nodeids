@@ -5,5 +5,7 @@
   "tests/UC-1_test.py::test_importExcelWithoutReviewColumn",
   "tests/UC-1_test.py::test_importExcelWithNeitherColumn",
   "tests/UC-1_test.py::test_importExceptExcelFile",
-  "tests/UC-1_test.py::test_preprocessData"
+  "tests/UC-1_test.py::test_preprocessData",
+  "tests/UC-1_test.py::test_preprocessInapproriateData",
+  "tests/UC-1_test.py::test_saveData"
 ]

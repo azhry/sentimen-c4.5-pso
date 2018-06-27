@@ -10,6 +10,7 @@ from libs.Preprocessor import Preprocessor
 from PyQt5.QtCore import qWarning, Qt
 from PyQt5.QtWidgets import QMessageBox
 from helpers.Path import relative_path
+from core.Connection import Connection
 
 def test_importCorrectExcelFile(qtbot):
 	"""
@@ -166,7 +167,7 @@ def test_importExceptExcelFile(qtbot):
 	window.show()
 	qtbot.addWidget(window)
 	qtbot.waitForWindowShown(window)
-	filepath = "G:/Kuliah/Skripsi/Program/data/dummy_without_neither_columns_test.xlsx"
+	filepath = "G:/Kuliah/Skripsi/Program/data/WordList.txt"
 	importer = DataImporter(filepath)
 	window.data = importer.get_data()
 	window.renderTable(window.data)
@@ -210,7 +211,7 @@ def test_preprocessData(qtbot):
 	print(f"{testID} passed")
 
 
-def test_preprocessData(qtbot):
+def test_preprocessInapproriateData(qtbot):
 	"""
 	UC-1-08
 
@@ -227,12 +228,50 @@ def test_preprocessData(qtbot):
 	filepath = "G:/Kuliah/Skripsi/Program/data/WordList.txt"
 	importer = DataImporter(filepath)
 	window.data = importer.get_data()
+	window.preprocessData()
+	window.msg.done(1)
+
+	assert window.msg is not None
+	assert window.msg.windowTitle() == "Warning"
+	assert window.msg.text() == "Anda harus mengimpor data terlebih dahulu"
+	assert window.data is None
+
+	print(f"{testID} passed")
+
+
+def test_saveData(qtbot):
+	"""
+	UC-1-09
+
+	Menyimpan data ulasan ke basisdata setelah memasukkan berkas yang sesuai dan telah dipraproses ketika menjalankan Database Server
+	"""
+	testID = "UC-1-09"
+	testName = "Menyimpan data ulasan ke basisdata setelah memasukkan berkas yang sesuai dan telah dipraproses ketika menjalankan Database Server"
+	print("\n" + testID + "\n" + testName)
+
+	window = AppWindow()
+	window.show()
+	qtbot.addWidget(window)
+	qtbot.waitForWindowShown(window)
+	
+	db = Connection.setConnection("localhost", "root", "", "sentimen_test")
+	db.clean("preprocessed_data")
+
+	filepath = "G:/Kuliah/Skripsi/Program/data/dummy_test.xlsx"
+	importer = DataImporter(filepath)
+	window.data = importer.get_data()
 	window.renderTable(window.data)
+	window.mainControl.preprocessData(window, window.data)
+	window.saveData()
+	data = db.select("preprocessed_data")
 
-	stopwordPath = relative_path("id.stopwords.txt")
-	correctWordsPath = relative_path("../libs/correct_words.json")
-	preprocessor = Preprocessor(stopwordPath, correctWordsPath)
-
-	# TODO
+	assert data[0][1] == "ojek online mudah jangkau pesan aplikasi"
+	assert data[0][2] == "Berdampak positif"
+	assert data[1][1] == "harga sedia ojek online jangkau"
+	assert data[1][2] == "Berdampak positif"
+	assert data[2][1] == "jasa ojek online langgar undang"
+	assert data[2][2] == "Berdampak negatif"
+	assert data[3][1] == "bisnis transportasi roda ojek online negara"
+	assert data[3][2] == "Netral"
 
 	print(f"{testID} passed")

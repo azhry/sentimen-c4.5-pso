@@ -13,7 +13,7 @@ class AppWindow(QMainWindow):
 		self.width			= 640
 		self.height			= 580
 		self.data 			= None
-		self.mainControl 	= MainControl()
+		self.mainControl 	= MainControl(self)
 		self.initUI()
 
 
@@ -199,14 +199,16 @@ class AppWindow(QMainWindow):
 
 	def preprocessData(self):
 		try:
+			if self.data is None:
+				raise Exception("Anda harus mengimpor data terlebih dahulu")
 			self.mainControl.preprocessData(self, self.data)
 		except:
-			msg = QMessageBox()
-			msg.setIcon(QMessageBox.Warning)
-			msg.setWindowTitle("Error")
-			msg.setText("Anda harus mengimpor data terlebih dahulu")
-			msg.setStandardButtons(QMessageBox.Ok)
-			msg.exec_()
+			self.msg = QMessageBox()
+			self.msg.setIcon(QMessageBox.Warning)
+			self.msg.setWindowTitle("Warning")
+			self.msg.setText("Anda harus mengimpor data terlebih dahulu")
+			self.msg.setStandardButtons(QMessageBox.Ok)
+			self.msg.show()
 
 	def importExcel(self):
 		self.data = self.mainControl.importExcel(self)
