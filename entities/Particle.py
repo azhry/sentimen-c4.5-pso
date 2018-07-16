@@ -8,7 +8,7 @@ class Particle:
 		self.position = np.array([random.choice((0, 1)) for _ in range(size)])
 		self.velocity = np.array([random.uniform(0, 1) for _ in range(size)])
 		self.best = 0
-		self.currBest = self.best
+		self.currBest = 0
 		self.currBestPosition = self.position
 		self.inertiaWeight = random.uniform(0, 1)
 

@@ -87,6 +87,7 @@ class MainControl():
 			self.db.multiplesql(sql)
 		if UI is not None:
 			UI.logOutput.append(f"Data folded by {k}")
+		self.data = list(self.db.select("preprocessed_data"))
 		return foldedData
 
 	def trainModel(self, UI = None):
@@ -104,7 +105,7 @@ class MainControl():
 				UI.logOutput.append("Training completed")
 			return self.clfs
 		except:
-			print("Error training: unable to start thread")
+			print("Error training")
 
 		return None
 
@@ -116,7 +117,7 @@ class MainControl():
 				print(f"Accuracy of tree {i + 1}: {self.clfs[i].accuracy}%")
 			return self.clfs
 		except:
-			print("Error testing: unable to start thread")
+			print("Error testing")
 
 		return None
 
@@ -137,9 +138,12 @@ class MainControl():
 			return None
 		else:			
 			if self.data is None:
-				self.data = self.db.select("preprocessed_data")
+				self.foldData(self.k)
 			if dstype == "Training Data":
 				return list(filter(lambda row: row[3] != kth, self.data))
 			elif dstype == "Testing Data":
 				return list(filter(lambda row: row[3] == kth, self.data))
 			return None
+
+	def resetDatabase(self):
+		self.db.reset()

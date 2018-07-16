@@ -7,11 +7,11 @@ class AppWindow(QMainWindow):
 
 	def __init__(self):
 		super().__init__()
-		self.title 			= "Analisis Sentimen C4.5 - PSO"
+		self.title 			= "Analisis Sentimen PSO - C4.5"
 		self.left			= 50
 		self.top			= 50
 		self.width			= 640
-		self.height			= 580
+		self.height			= 590
 		self.data 			= None
 		self.mainControl 	= MainControl(self)
 		self.initUI()
@@ -30,7 +30,7 @@ class AppWindow(QMainWindow):
 		self.logOutput = QTextEdit(self)
 		self.logOutput.setReadOnly(True)
 		self.logOutput.resize(620, 90)
-		self.logOutput.move(10, 460)
+		self.logOutput.move(10, 480)
 		logDate = datetime.datetime.now().strftime("%I:%M %p, %d %B %Y")
 		self.logOutput.insertPlainText(f"Log {logDate}")
 
@@ -38,39 +38,90 @@ class AppWindow(QMainWindow):
 
 	def renderTabs(self):
 		self.tabs = QTabWidget(self)
-		self.tabs.resize(620, 400)
+		self.tabs.resize(620, 450)
 		self.tabs.move(10, 20)
 
 		self.ETLTabs = QWidget()
 		self.trainTabs = QWidget()
 		self.testTabs = QWidget()
 		
-		self.tabs.addTab(self.ETLTabs, "ETL")
-		self.tabs.addTab(self.trainTabs, "Training")
+		self.tabs.addTab(self.ETLTabs, "Preprocess - Training")
+		# self.tabs.addTab(self.trainTabs, "Training")
 		self.tabs.addTab(self.testTabs, "Testing")
 
 	def renderETLTab(self):
 		self.tableWidget = QTableWidget(self.ETLTabs)
-		self.tableWidget.resize(490, 300)
+		self.tableWidget.resize(420, 350)
 		self.tableWidget.move(10, 30)
-		
-		self.preprocessButton = QPushButton("Preprocess", self.ETLTabs)
-		self.preprocessButton.move(520, 140)
+
+		# Preprocess button
+		self.preprocessGroupBox = QGroupBox("Preprocess Data", self.ETLTabs)
+		self.preprocessGroupBox.move(450, 30)
+		self.preprocessGroupBox.resize(150, 70)
+		preprocessLayout = QFormLayout()
+		self.preprocessButton = QPushButton("Preprocess")
 		self.preprocessButton.clicked.connect(self.preprocessData)
-		
-		self.saveDataButton = QPushButton("Save Data", self.ETLTabs)
-		self.saveDataButton.move(520, 180)
-		self.saveDataButton.clicked.connect(self.saveData)
-	
+		preprocessLayout.addRow(self.preprocessButton)
+		self.preprocessGroupBox.setLayout(preprocessLayout)
+		# Preprocess button (END)
+
+		# k-Fold button
+		self.kFoldGroupBox = QGroupBox("k-Fold Cross Validation", self.ETLTabs)
+		self.kFoldGroupBox.move(450, 110)
+		self.kFoldGroupBox.resize(150, 100)
+		kFoldLayout = QFormLayout()
+		kFoldValueTextbox = QLineEdit()
+		kFoldValueTextbox.textChanged.connect(lambda: self.setLineEditDefaultNumber(kFoldValueTextbox, "2"))
+		kFoldValueTextbox.setText("10")
+		kFoldLayout.addRow(QLabel("k"), kFoldValueTextbox)
+		kFoldButton = QPushButton("Fold!")
+		kFoldButton.clicked.connect(lambda: self.foldData(int(kFoldValueTextbox.text())))
+		kFoldLayout.addRow(kFoldButton)
+		self.kFoldGroupBox.setLayout(kFoldLayout)
+		# k-Fold button (END)
+
+		# View data layout
+		self.viewDataGroupBox = QGroupBox("View Data", self.ETLTabs)
+		self.viewDataGroupBox.move(450, 220)
+		self.viewDataGroupBox.resize(150, 120)
+		viewDataLayout = QFormLayout()
+		kNumTextBox = QLineEdit()
+		kNumTextBox.textChanged.connect(lambda: self.setLineEditDefaultNumber(kNumTextBox, "1"))
+		kNumTextBox.setText("1")
+		viewDataLayout.addRow(QLabel("k"), kNumTextBox)
+		dataTypeComboBox = QComboBox()
+		dataTypeComboBox.addItem("Training Data")
+		dataTypeComboBox.addItem("Testing Data")
+		viewDataLayout.addRow(QLabel("Type"), dataTypeComboBox)
+		viewDataButton = QPushButton("View Data")
+		viewDataButton.clicked.connect(lambda: self.viewData(int(kNumTextBox.text()), dataTypeComboBox.currentText()))
+		viewDataLayout.addRow(viewDataButton)
+		self.viewDataGroupBox.setLayout(viewDataLayout)
+		# View data layout (END)
+
+		# self.saveDataButton = QPushButton("Save Data", self.ETLTabs)
+		# self.saveDataButton.move(520, 180)
+		# self.saveDataButton.clicked.connect(self.saveData)
+
+		# Training button
+		self.trainC45GroupBox = QGroupBox("Train C4.5", self.ETLTabs)
+		self.trainC45GroupBox.move(450, 350)
+		self.trainC45GroupBox.resize(150, 70)
+		trainC45Layout = QFormLayout()
+		trainC45Button = QPushButton("Train C4.5")
+		trainC45Button.clicked.connect(self.trainModel)
+		trainC45Layout.addRow(trainC45Button)
+		self.trainC45GroupBox.setLayout(trainC45Layout)
+		# Training button (END)
+
 		self.positiveLabelCount = QLabel("Positive: -", self.ETLTabs)
-		self.positiveLabelCount.move(10, 345)
+		self.positiveLabelCount.move(10, 390)
 		self.negativeLabelCount = QLabel("Negative: -", self.ETLTabs)
-		self.negativeLabelCount.move(150, 345)
+		self.negativeLabelCount.move(150, 390)
 		self.neutralLabelCount = QLabel("Neutral: -", self.ETLTabs)
-		self.neutralLabelCount.move(290, 345)
+		self.neutralLabelCount.move(290, 390)
 
 	def renderTrainingTab(self):
-
 		self.kFoldGroupBox = QGroupBox("k-Fold Cross Validation", self.trainTabs)
 		self.kFoldGroupBox.move(450, 30)
 		self.kFoldGroupBox.resize(150, 100)
@@ -153,14 +204,39 @@ class AppWindow(QMainWindow):
 		self.importExcelMenu = QAction("Import Excel", self)
 		self.importExcelMenu.triggered.connect(self.importExcel)
 		self.fileMenu.addAction(self.importExcelMenu)
+		self.resetDatabaseMenu = QAction("Reset Database", self)
+		self.resetDatabaseMenu.triggered.connect(self.resetDatabase)
+		self.fileMenu.addAction(self.resetDatabaseMenu)
+
+	def resetDatabase(self):
+		try:
+			self.mainControl.resetDatabase()
+			self.logOutput.append("Database reset - all tables truncated")
+			self.statusBar().showMessage("Database reset successfully")
+		except:
+			self.msg = QMessageBox()
+			self.msg.setIcon(QMessageBox.Error)
+			self.msg.setWindowTitle("Error")
+			self.msg.setText("Error saat reset database")
+			self.msg.setStandardButtons(QMessageBox.Ok)
+			self.msg.show()
 
 	def foldData(self, k):
-		self.mainControl.foldData(k, self)
-		self.testingTable.setRowCount(k)
-		self.testingTable.setColumnCount(4)
-		self.testingTable.setHorizontalHeaderLabels(["Attrs", "C4.5", "C4.5 - PSO", "Removed Attrs"])
-		tableHeader = self.testingTable.horizontalHeader()
-		tableHeader.setSectionResizeMode(0, QHeaderView.Stretch)
+		try:
+			self.mainControl.foldData(k, self)
+			self.testingTable.setRowCount(k)
+			self.testingTable.setColumnCount(4)
+			self.testingTable.setHorizontalHeaderLabels(["Attrs", "C4.5", "C4.5 - PSO", "Removed Attrs"])
+			tableHeader = self.testingTable.horizontalHeader()
+			tableHeader.setSectionResizeMode(0, QHeaderView.Stretch)
+		except:
+			self.msg = QMessageBox()
+			self.msg.setIcon(QMessageBox.Warning)
+			self.msg.setWindowTitle("Warning")
+			self.msg.setText("Anda harus mengimpor data terlebih dahulu")
+			self.msg.setStandardButtons(QMessageBox.Ok)
+			self.msg.show()
+
 
 	def saveData(self):
 		self.mainControl.saveData()
@@ -176,32 +252,56 @@ class AppWindow(QMainWindow):
 		if clfs is not None:
 			for clf in clfs:
 				self.testingTable.setItem(clf.foldNumber - 1, 1, QTableWidgetItem(f"{round(clf.accuracy, 2)}%"))
+		else:
+			self.msg = QMessageBox()
+			self.msg.setIcon(QMessageBox.Warning)
+			self.msg.setWindowTitle("Warning")
+			self.msg.setText("Testing: anda harus melatih algoritma C4.5 terlebih dahulu")
+			self.msg.setStandardButtons(QMessageBox.Ok)
+			self.msg.show()
 
 	def optimizeModel(self, populationSize, numIteration, c1, c2, target):
-		results = self.mainControl.optimizeModel(populationSize, numIteration, c1, c2, target)
-		for result in results:
-			self.testingTable.setItem(result[0] - 1, 2, QTableWidgetItem(f"{round(result[1].best, 2)}%"))
-			self.testingTable.setItem(result[0] - 1, 3, QTableWidgetItem(f"{list(result[1].position).count(0)}"))
+		try:
+			results = self.mainControl.optimizeModel(populationSize, numIteration, c1, c2, target)
+			for result in results:
+				self.testingTable.setItem(result[0] - 1, 2, QTableWidgetItem(f"{round(result[1].best, 2)}%"))
+				self.testingTable.setItem(result[0] - 1, 3, QTableWidgetItem(f"{list(result[1].position).count(0)}"))
+		except:
+			self.msg = QMessageBox()
+			self.msg.setIcon(QMessageBox.Warning)
+			self.msg.setWindowTitle("Warning")
+			self.msg.setText("Testing: anda harus memasukkan nilai parameter PSO")
+			self.msg.setStandardButtons(QMessageBox.Ok)
+			self.msg.show()
 
 	def viewData(self, kth, dstype):
-		data = self.mainControl.getData(kth, dstype)
-		self.trainingTable.setRowCount(len(data))
-		self.trainingTable.setColumnCount(2)
-		self.trainingTable.setHorizontalHeaderLabels(["Review", "Label"])
-		tableHeader = self.trainingTable.horizontalHeader()
-		tableHeader.setSectionResizeMode(0, QHeaderView.Stretch)
-		i = 0
-		for row in data:
-			self.trainingTable.setItem(i, 0, QTableWidgetItem(row[1]))
-			self.trainingTable.setItem(i, 1, QTableWidgetItem(row[2]))
-			i += 1
-		self.trainingTable.show()
+		try:
+			data = self.mainControl.getData(kth, dstype)
+			self.tableWidget.setRowCount(len(data))
+			self.tableWidget.setColumnCount(2)
+			self.tableWidget.setHorizontalHeaderLabels(["Review", "Label"])
+			tableHeader = self.tableWidget.horizontalHeader()
+			tableHeader.setSectionResizeMode(0, QHeaderView.Stretch)
+			i = 0
+			for row in data:
+				self.tableWidget.setItem(i, 0, QTableWidgetItem(row[1]))
+				self.tableWidget.setItem(i, 1, QTableWidgetItem(row[2]))
+				i += 1
+			self.tableWidget.show()
+		except:
+			self.msg = QMessageBox()
+			self.msg.setIcon(QMessageBox.Warning)
+			self.msg.setWindowTitle("Warning")
+			self.msg.setText("Anda harus menentukan nilai k yang ingin dilihat")
+			self.msg.setStandardButtons(QMessageBox.Ok)
+			self.msg.show()
 
 	def preprocessData(self):
 		try:
 			if self.data is None:
 				raise Exception("Anda harus mengimpor data terlebih dahulu")
 			self.mainControl.preprocessData(self, self.data)
+			self.saveData()
 		except:
 			self.msg = QMessageBox()
 			self.msg.setIcon(QMessageBox.Warning)
@@ -239,3 +339,7 @@ class AppWindow(QMainWindow):
 			self.msg.setStandardButtons(QMessageBox.Ok)
 			self.msg.show()
 			self.statusBar().showMessage("Import failed")
+
+	def setLineEditDefaultNumber(self, lineEdit, defaultNumber):
+		if lineEdit.text() == "":
+			lineEdit.setText(f"{defaultNumber}")

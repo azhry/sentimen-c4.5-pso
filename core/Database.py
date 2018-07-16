@@ -38,6 +38,13 @@ class Database():
 		except:
 			self.db.rollback()
 
+	def executeQuery(self, sql):
+		try:
+			self.cursor.execute(sql)
+			self.db.commit()
+		except:
+			self.db.rollback()
+
 	def insert(self, table, data):
 		dlen = len(data)
 		sql = "INSERT INTO %s(" % table
@@ -78,3 +85,9 @@ class Database():
 
 	def close(self):
 		self.db.close()
+
+	def reset(self):
+		self.clean("attributes")
+		self.clean("preprocessed_data")
+		self.clean("tree_nodes")
+		self.clean("weights")

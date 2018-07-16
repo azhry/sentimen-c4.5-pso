@@ -203,10 +203,10 @@ def test_preprocessData(qtbot):
 	correctWordsPath = relative_path("../libs/correct_words.json")
 	preprocessor = Preprocessor(stopwordPath, correctWordsPath)
 
-	assert preprocessor.preprocess(window.data["Review"][0]) == ["ojek", "online", "mudah", "jangkau", "pesan", "aplikasi"]
-	assert preprocessor.preprocess(window.data["Review"][1]) == ["harga", "sedia", "ojek", "online", "jangkau"]
+	assert preprocessor.preprocess(window.data["Review"][0]) == ["ojek", "online", "mudah", "jangkau", "pes", "aplikasi"]
+	assert preprocessor.preprocess(window.data["Review"][1]) == ["harga", "sedia", "ojek", "online", "sangat", "jangkau"]
 	assert preprocessor.preprocess(window.data["Review"][2]) == ["jasa", "ojek", "online", "langgar", "undang"]
-	assert preprocessor.preprocess(window.data["Review"][3]) == ["bisnis", "transportasi", "roda", "ojek", "online", "negara"]
+	assert preprocessor.preprocess(window.data["Review"][3]) == ["bisnis", "transportasi", "roda", "ojek", "online", "beberapa", "negara"]
 
 	print(f"{testID} passed")
 
@@ -265,13 +265,13 @@ def test_saveData(qtbot):
 	window.saveData()
 	data = db.select("preprocessed_data")
 
-	assert data[0][1] == "ojek online mudah jangkau pesan aplikasi"
+	assert data[0][1] == "ojek online mudah jangkau pes aplikasi"
 	assert data[0][2] == "Berdampak positif"
-	assert data[1][1] == "harga sedia ojek online jangkau"
+	assert data[1][1] == "harga sedia ojek online sangat jangkau"
 	assert data[1][2] == "Berdampak positif"
 	assert data[2][1] == "jasa ojek online langgar undang"
 	assert data[2][2] == "Berdampak negatif"
-	assert data[3][1] == "bisnis transportasi roda ojek online negara"
+	assert data[3][1] == "bisnis transportasi roda ojek online beberapa negara"
 	assert data[3][2] == "Netral"
 
 	print(f"{testID} passed")
