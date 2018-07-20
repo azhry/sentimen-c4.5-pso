@@ -2,6 +2,9 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from controls.MainControl import MainControl
 import datetime
+from libs.TFIDF_optimized import TFIDF_optimized
+from libs.C45_optimized import C45_optimized
+import numpy as np
 
 class AppWindow(QMainWindow):
 
@@ -33,7 +36,7 @@ class AppWindow(QMainWindow):
 		self.logOutput.move(10, 480)
 		logDate = datetime.datetime.now().strftime("%I:%M %p, %d %B %Y")
 		self.logOutput.insertPlainText(f"Log {logDate}")
-
+		self.logOutput.textChanged.connect(lambda: self.clearTextEdit(self.logOutput))
 		self.show()
 
 	def renderTabs(self):
@@ -49,6 +52,20 @@ class AppWindow(QMainWindow):
 		# self.tabs.addTab(self.trainTabs, "Training")
 		self.tabs.addTab(self.testTabs, "Testing")
 
+	def testNew(self):
+		# self.preprocessData()
+		
+		# index label in -2 if loaded from db otherwise -1
+
+		tfidf = TFIDF_optimized(self.data)
+		print(tfidf.tfidf_vectorizer.get_feature_names())
+		print(tfidf.weights)
+		clf = C45_optimized(tfidf, self.data)
+		clf.calculate_total_entropy()
+		clf.train()
+		print("TRAINING SUCCESS")
+		print(clf.root)
+
 	def renderETLTab(self):
 		self.tableWidget = QTableWidget(self.ETLTabs)
 		self.tableWidget.resize(420, 350)
@@ -60,7 +77,8 @@ class AppWindow(QMainWindow):
 		self.preprocessGroupBox.resize(150, 70)
 		preprocessLayout = QFormLayout()
 		self.preprocessButton = QPushButton("Preprocess")
-		self.preprocessButton.clicked.connect(self.preprocessData)
+		# self.preprocessButton.clicked.connect(self.preprocessData)
+		self.preprocessButton.clicked.connect(self.testNew)
 		preprocessLayout.addRow(self.preprocessButton)
 		self.preprocessGroupBox.setLayout(preprocessLayout)
 		# Preprocess button (END)
@@ -204,9 +222,17 @@ class AppWindow(QMainWindow):
 		self.importExcelMenu = QAction("Import Excel", self)
 		self.importExcelMenu.triggered.connect(self.importExcel)
 		self.fileMenu.addAction(self.importExcelMenu)
+		self.loadDataMenu = QAction("Load Data", self)
+		self.loadDataMenu.triggered.connect(self.loadData)
+		self.fileMenu.addAction(self.loadDataMenu)
 		self.resetDatabaseMenu = QAction("Reset Database", self)
 		self.resetDatabaseMenu.triggered.connect(self.resetDatabase)
 		self.fileMenu.addAction(self.resetDatabaseMenu)
+
+	def loadData(self):
+		self.data = self.mainControl.loadData()
+		print(self.data)
+		self.renderTable(self.data)
 
 	def resetDatabase(self):
 		try:
@@ -300,7 +326,7 @@ class AppWindow(QMainWindow):
 		try:
 			if self.data is None:
 				raise Exception("Anda harus mengimpor data terlebih dahulu")
-			self.mainControl.preprocessData(self, self.data)
+			self.data["Review"] = self.mainControl.preprocessData(self, self.data)
 			self.saveData()
 		except:
 			self.msg = QMessageBox()
@@ -343,3 +369,7 @@ class AppWindow(QMainWindow):
 	def setLineEditDefaultNumber(self, lineEdit, defaultNumber):
 		if lineEdit.text() == "":
 			lineEdit.setText(f"{defaultNumber}")
+
+	def clearTextEdit(self, textEdit):
+		if textEdit.document().blockCount() > 500:
+			textEdit.clear()

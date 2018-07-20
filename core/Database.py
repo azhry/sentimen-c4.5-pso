@@ -1,4 +1,5 @@
 import MySQLdb
+from pandas import DataFrame
 
 class Database():
 
@@ -19,6 +20,22 @@ class Database():
 		try:
 			self.cursor.execute(sql)
 			return self.cursor.fetchall()
+		except:
+			print("Unable to fetch data")
+			return None
+
+	def select_pd(self, table, condition = "", order = None):
+		clen = len(condition)
+		sql = "SELECT * FROM %s" % table
+		if clen >= 3:
+			sql += " WHERE %s " % condition
+			if order is not None:
+				sql += order
+		try:
+			self.cursor.execute(sql)
+			result = list(self.cursor.fetchall())
+			df = DataFrame(result, columns = ["id", "Review", "Label", "fold_number"])
+			return df
 		except:
 			print("Unable to fetch data")
 			return None

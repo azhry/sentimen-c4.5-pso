@@ -1,6 +1,7 @@
 from core.Connection import Connection
 from libs.DataImporter import DataImporter
-from libs.Preprocessor import Preprocessor
+# from libs.Preprocessor import Preprocessor
+from pyx.Preprocessor import Preprocessor
 from helpers.Path import relative_path
 from libs.C45 import C45
 from PyQt5.QtWidgets import *
@@ -51,6 +52,7 @@ class MainControl():
 	def preprocessData(self, UI, data):
 		self.preprocessedData = []
 		totalTime = 0
+		resultReview = []
 		for i, (review, label) in enumerate(zip(data["Review"], data["Label"])):
 			if i > 0:
 				UI.tableWidget.item(i - 1, 0).setBackground(QColor(255, 255, 255))
@@ -59,6 +61,7 @@ class MainControl():
 			preprocessedReview = " ".join(self.preprocessor.preprocess(review))
 			self.preprocessedData.append({ "review": preprocessedReview, "label" : label })
 			endTime = time.time()
+			resultReview.append(preprocessedReview)
 			UI.logOutput.append(f"Review {i + 1} preprocessed in {round(endTime - startTime, 2)}s")
 			totalTime += (endTime - startTime)
 			UI.tableWidget.scrollToItem(UI.tableWidget.item(i - 1, 0), QAbstractItemView.PositionAtCenter)
@@ -67,6 +70,7 @@ class MainControl():
 		UI.tableWidget.item(dlen - 1, 0).setBackground(QColor(255, 255, 255))
 		UI.tableWidget.scrollToItem(UI.tableWidget.item(dlen - 1, 0), QAbstractItemView.PositionAtCenter)
 		UI.logOutput.append(f"{dlen} review(s) preprocessed in {round(totalTime, 2)}s")
+		return resultReview
 
 	def saveData(self):
 		sql = "INSERT INTO preprocessed_data(review, label) VALUES"
@@ -147,3 +151,6 @@ class MainControl():
 
 	def resetDatabase(self):
 		self.db.reset()
+
+	def loadData(self):
+		return self.db.select_pd("preprocessed_data")
