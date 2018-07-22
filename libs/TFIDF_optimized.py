@@ -7,8 +7,7 @@ import operator
 class TFIDF_optimized:
 
 	def __init__(self, documents):
-		self.documents 	= documents["Review"]
-		self.labels = documents["Label"]
+		self.documents 	= documents
 		self.stopwords  = StopWordRemoverFactory().get_stop_words()
 		self.tfidf_vectorizer = TfidfVectorizer(max_df=0.9, 
 			min_df=1, 

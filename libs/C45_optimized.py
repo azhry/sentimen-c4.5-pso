@@ -1,26 +1,21 @@
-from core.Connection import Connection
 from math import log
 from collections import Counter
 from entities.Node import Node
-import numpy as np, logging
-
-logging.basicConfig(level=logging.DEBUG)
-logger = logging.getLogger(__name__)
+from libs.TFIDF_optimized import TFIDF_optimized
+import numpy as np
 
 class C45_optimized:
 
-	def __init__(self, vectors, data, labelIndex = -1):
+	def __init__(self, vectors, data):
 		self.vectors = vectors
 		self.data = data
 		self.npdata = data.as_matrix()
 		self.totalEntropy = 0
 		self.weights = self.vectors.weights
 		self.termsInfo = self.vectors.termIndex
-		self.attributes = list(self.termsInfo.keys())
-		self.root = None
-		self.db = Connection.db
-		self.labelIndex = labelIndex
-		print(self.npdata)
+		self.attributes = np.array(list(self.termsInfo.keys()))
+		print(self.attributes)
+		self.tree = None
 
 	def calculate_total_entropy(self):
 		self.totalEntropy = 0
@@ -87,9 +82,9 @@ class C45_optimized:
 			attr, threshold = attrThresholds[0][0], attrThresholds[0][1]
 
 			# create new node instance
-			newNode = Node(attr, threshold, "root" if self.root is None else "branch")
-			if self.root is None:
-				self.root = newNode
+			newNode = Node(attr, threshold, "root" if self.tree is None else "branch")
+			if self.tree is None:
+				self.tree = newNode
 
 			# get left and right childs for the node
 			left, right = self.get_child_nodes(attr, threshold, excludedRows)
@@ -116,42 +111,58 @@ class C45_optimized:
 			if parentNode is not None:
 				if direction == "left":
 					parentNode.set_left_child(newNode)
-					print(f"Attach parent left: {newNode}")
 				
 				elif direction == "right":
 					parentNode.set_right_child(newNode)
-					print(f"Attach parent right: {newNode}")
 
 			# set node type to label if there is only one label
 			if labelCount == 1:
 				newNode.set_type("leaf")
 				newNode.set_label(labels[0])
-				print(f"Set node to leaf: {labels[0]}")
 			elif labelCount == 2:
-				leafNode = Node(attr, threshold, "leaf")
 				if len(leftLabel) == 1:
-					leafNode.set_label(leftLabel[0])
-					newNode.set_left_child(leafNode)
-					print(f"Set node to leaf: {leftLabel[0]}")
+					leftLeafNode = Node(attr, threshold, "leaf")
+					leftLeafNode.set_label(leftLabel[0])
+					newNode.set_left_child(leftLeafNode)
 				if len(rightLabel) == 1:
-					leafNode.set_label(rightLabel[0])
-					newNode.set_right_child(leafNode)
-					print(f"Set node to leaf: {rightLabel[0]}")
+					rightLeafNode = Node(attr, threshold, "leaf")
+					rightLeafNode.set_label(rightLabel[0])
+					newNode.set_right_child(rightLeafNode)
 			else:
 				if rightDataCount > 0:
-					print(f"Go to right {newNode}")
 					self.attach_node(leftExclusion, newNode, "right")
 				if leftDataCount > 0:
-					print(f"Go to left {newNode}")
 					self.attach_node(rightExclusion, newNode, "left")
-
 
 	def train(self):
 		self.calculate_total_entropy()
 		self.attach_node()
 
-	def classify(self, data):
-		pass
+	def traverse(self, row, vectors, currNode = None):
+		# is there null coalesce?
+		if currNode is None:
+			currNode = self.tree
 
-	def evaluate(self, data):
-		pass
+		if currNode is not None:
+			if currNode.nodeType == "leaf":
+				return currNode.label
+			else:
+				if vectors.weights[:, vectors.termIndex[currNode.attribute]][row] <= currNode.threshold:
+					return self.traverse(row, vectors, currNode.left)
+				else:
+					return self.traverse(row, vectors, currNode.right)
+
+		return False
+
+	def fit(self, docs, labels):
+		self.train()
+
+	def predict(self, docs):
+		vectors = TFIDF_optimized(docs)
+		return np.array([self.traverse(i, vectors) for i, vec in enumerate(vectors.weights)])
+
+	def score(self, data):
+		predicted = self.predict(data["Review"])
+		actual = np.array(data["Label"])
+		at, cm = np.unique(predicted == actual, return_counts=True)
+		return (0 if True not in at else (cm[0] if len(at) == 1 else cm[1])) / np.sum(cm)

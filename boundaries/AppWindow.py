@@ -4,7 +4,7 @@ from controls.MainControl import MainControl
 import datetime
 from libs.TFIDF_optimized import TFIDF_optimized
 from libs.C45_optimized import C45_optimized
-import numpy as np
+import numpy as np, pickle, io
 
 class AppWindow(QMainWindow):
 
@@ -57,14 +57,20 @@ class AppWindow(QMainWindow):
 		
 		# index label in -2 if loaded from db otherwise -1
 
-		tfidf = TFIDF_optimized(self.data)
-		print(tfidf.tfidf_vectorizer.get_feature_names())
-		print(tfidf.weights)
-		clf = C45_optimized(tfidf, self.data)
-		clf.calculate_total_entropy()
-		clf.train()
-		print("TRAINING SUCCESS")
-		print(clf.root)
+		# tfidf = TFIDF_optimized(self.data["Review"])
+		# clf = C45_optimized(tfidf, self.data)
+		# clf.calculate_total_entropy()
+		# clf.train()
+		# file = open("data/tree.pckl", "wb")
+		# pickle.dump(clf, file)
+		# file.close()
+		# print("TRAINING SUCCESS")
+		# print(clf.score(self.data))
+		file = open("data/tree.pckl", "rb")
+		x = pickle.load(file)
+		print(x.score(self.data))
+		print(x.attributes)
+		file.close()
 
 	def renderETLTab(self):
 		self.tableWidget = QTableWidget(self.ETLTabs)
