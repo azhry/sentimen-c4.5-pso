@@ -4,10 +4,16 @@ from libs.DataImporter import DataImporter
 from pyx.Preprocessor import Preprocessor
 from helpers.Path import relative_path
 from libs.C45 import C45
+from libs.TFIDF import TFIDF
+from libs.Worker import Worker
+from entities.Storage import Storage
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-import random, sys, time
-import numpy as np
+from PyQt5.QtCore import QThreadPool, QEventLoop
+from sklearn.model_selection import KFold
+from sklearn import tree
+import sys, time
+import numpy as np, os
 
 class MainControl():
 
@@ -27,6 +33,7 @@ class MainControl():
 		self.correctWordsPath = relative_path("../libs/correct_words.json")
 		self.preprocessor = Preprocessor(self.stopwordPath, self.correctWordsPath)
 		self.k = 0
+		self.storage = Storage()
 
 	def importExcel(self, UI):
 		return self.openFileDialog(UI)
@@ -49,7 +56,7 @@ class MainControl():
 			UI.statusBar().showMessage("Import failed")
 		return None
 
-	def preprocessData(self, UI, data):
+	def preprocess_data(self, UI, data):
 		self.preprocessedData = []
 		totalTime = 0
 		resultReview = []
@@ -72,58 +79,64 @@ class MainControl():
 		UI.logOutput.append(f"{dlen} review(s) preprocessed in {round(totalTime, 2)}s")
 		return resultReview
 
-	def saveData(self):
-		sql = "INSERT INTO preprocessed_data(review, label) VALUES"
-		for i, data in enumerate(self.preprocessedData):
-			sql += "('" + data["review"] + "', '" + data["label"] + "')"
-			if i < len(self.preprocessedData) - 1:
-				sql += ","
-		self.db.multiplesql(sql)
+	def save_data(self, data):
+		self.storage.save(data, "data/preprocessed/preprocessed.pckl")
 
-	def foldData(self, k, UI = None):
+	def fold_data(self, k, UI = None):
 		self.k = k
-		self.data = list(self.db.select("preprocessed_data"))
-		random.shuffle(self.data)
-		foldedData = np.array(np.array_split(self.data, k))
-		for i, data in enumerate(foldedData):
-			ids = ",".join([str(x) for x in data[:,0]])
-			sql = "UPDATE preprocessed_data SET fold_number = " + str(i + 1) + " WHERE id IN (" + ids + ");"
-			self.db.multiplesql(sql)
+		self.threadpool = QThreadPool()
+		self.threadpool.setMaxThreadCount(self.k)
+		self.data = self.storage.load("data/preprocessed/preprocessed.pckl")
+		kf = KFold(n_splits=self.k, shuffle=True, random_state=2)
+		for i, (train, test) in enumerate(kf.split(self.data)):
+			self.storage.save(self.data.iloc[train], f"data/folds/train{i + 1}.pckl")
+			self.storage.save(self.data.iloc[test], f"data/folds/test{i + 1}.pckl")
 		if UI is not None:
 			UI.logOutput.append(f"Data folded by {k}")
-		self.data = list(self.db.select("preprocessed_data"))
-		return foldedData
 
-	def trainModel(self, UI = None):
-		if self.data is None:
-			self.data = list(self.db.select("preprocessed_data"))
-		self.clfs = []
-		try:
-			for i in range(self.k):
-				testData = list(filter(lambda row: row[3] == i + 1, self.data))
-				trainData = list(filter(lambda row: row[3] != i + 1, self.data))
-				self.clfs.append(C45(trainData, trainData, i + 1))
-				self.clfs[i].constructTree(UI)
-			
+	def mltrain_fn(self, params={'i': None, 'remove_zero_tfidf': False, 'UI': None}):
+		train = self.storage.load(f"data/folds/train{params['i'] + 1}.pckl")
+		tfidf = TFIDF(train["Review"])
+		if params['remove_zero_tfidf']:
+			tfidf.weights = tfidf.remove_zero_tfidf(tfidf.weights, 0.5)
+		clf = C45(tfidf, train)
+		clf.train()
+		return params["i"], clf, tfidf, params['UI'] or None
+
+	def mltrain_result(self, res):
+		self.attrs[res[0]] = res[2].count_vect.get_feature_names()
+		self.clfs[res[0]] = res[1]
+		self.tfidfs[res[0]] = res[2]
+		self.storage.save(res[1], f"data/models/tree{res[0] + 1}.pckl")
+		if res[3] is not None:
+			res[3].logOutput.append(f"Tree {res[0] + 1} trained")
+
+
+	def train_model(self, UI = None):
+		self.attrs, self.clfs, self.tfidfs = ([0 for i in range(self.k)], [0 for i in range(self.k)], [0 for i in range(self.k)])
+		el = QEventLoop()
+		for i in range(self.k):
 			if UI is not None:
-				UI.logOutput.append("Training completed")
-			return self.clfs
-		except:
-			print("Error training")
+				UI.logOutput.append(f"Train tree {i + 1}")
+			params = {'i': i, 'remove_zero_tfidf': True, 'UI': UI}
+			worker = Worker(self.mltrain_fn, params)
+			worker.signals.result.connect(self.mltrain_result)
+			self.threadpool.start(worker)
 
-		return None
+		self.threadpool.waitForDone()
+		el.processEvents()
+		el.exit()
+		if UI is not None:
+			UI.logOutput.append("Training completed")
+		return self.attrs
 
-	def testModel(self):
-		try:
-			for i in range(self.k):
-				print(f"Testing tree {i + 1}")
-				self.clfs[i].accuracy = self.clfs[i].evaluate(self.clfs[i].tfidf)
-				print(f"Accuracy of tree {i + 1}: {self.clfs[i].accuracy}%")
-			return self.clfs
-		except:
-			print("Error testing")
-
-		return None
+	def test_model(self):
+		scores = [0 for i in range(self.k)]
+		for i in range(self.k):
+			test = self.storage.load(f"data/folds/test{i + 1}.pckl")
+			self.clfs[i].scores = self.clfs[i].score(self.tfidfs[i], test)
+			scores[i] = self.clfs[i].scores
+		return scores
 
 	def optimizeModel(self, popSize, numIteration, c1, c2, target):
 		results = []
@@ -131,26 +144,20 @@ class MainControl():
 			results.append((self.clfs[i].foldNumber, self.clfs[i].optimize(popSize, numIteration, c1, c2, target)))
 		return results
 
-	def getData(self, kth, dstype):
-		if kth > self.k or kth <= 0:
-			msg = QMessageBox()
-			msg.setIcon(QMessageBox.Warning)
-			msg.setWindowTitle("Error")
-			msg.setText("Anda harus memasukkan nilai k yang valid")
-			msg.setStandardButtons(QMessageBox.Ok)
-			msg.exec_()
-			return None
-		else:			
-			if self.data is None:
-				self.foldData(self.k)
-			if dstype == "Training Data":
-				return list(filter(lambda row: row[3] != kth, self.data))
-			elif dstype == "Testing Data":
-				return list(filter(lambda row: row[3] == kth, self.data))
-			return None
+	def get_data(self, k, dstype):
+		t = "train" if dstype == "Training Data" else "test"
+		return self.storage.load(f"data/folds/{t}{k}.pckl")
 
 	def resetDatabase(self):
 		self.db.reset()
 
-	def loadData(self):
-		return self.db.select_pd("preprocessed_data")
+	def load_data(self, path):
+		if os.path.exists(path):
+			return self.storage.load(path)
+		msg = QMessageBox()
+		msg.setIcon(QMessageBox.Warning)
+		msg.setWindowTitle("Error")
+		msg.setText("Data yang dimuat tidak ada")
+		msg.setStandardButtons(QMessageBox.Ok)
+		msg.exec_()
+		return None

@@ -1,15 +1,13 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
+from libs.Worker import Worker
 from controls.MainControl import MainControl
-import datetime
-from libs.TFIDF_optimized import TFIDF_optimized
-from libs.C45_optimized import C45_optimized
-import numpy as np, pickle, io
+import datetime, time
 
 class AppWindow(QMainWindow):
 
-	def __init__(self):
-		super().__init__()
+	def __init__(self, *args, **kwargs):
+		super(AppWindow, self).__init__(*args, **kwargs)
 		self.title 			= "Analisis Sentimen PSO - C4.5"
 		self.left			= 50
 		self.top			= 50
@@ -19,7 +17,6 @@ class AppWindow(QMainWindow):
 		self.mainControl 	= MainControl(self)
 		self.initUI()
 
-
 	def initUI(self):
 		self.setWindowTitle(self.title)
 		self.setGeometry(self.left, self.top, self.width, self.height)
@@ -27,7 +24,6 @@ class AppWindow(QMainWindow):
 		self.renderTabs()
 
 		self.renderETLTab()
-		self.renderTrainingTab()
 		self.renderTestingTab()
 
 		self.logOutput = QTextEdit(self)
@@ -48,29 +44,8 @@ class AppWindow(QMainWindow):
 		self.trainTabs = QWidget()
 		self.testTabs = QWidget()
 		
-		self.tabs.addTab(self.ETLTabs, "Preprocess - Training")
-		# self.tabs.addTab(self.trainTabs, "Training")
-		self.tabs.addTab(self.testTabs, "Testing")
-
-	def testNew(self):
-		# self.preprocessData()
-		
-		# index label in -2 if loaded from db otherwise -1
-
-		# tfidf = TFIDF_optimized(self.data["Review"])
-		# clf = C45_optimized(tfidf, self.data)
-		# clf.calculate_total_entropy()
-		# clf.train()
-		# file = open("data/tree.pckl", "wb")
-		# pickle.dump(clf, file)
-		# file.close()
-		# print("TRAINING SUCCESS")
-		# print(clf.score(self.data))
-		file = open("data/tree.pckl", "rb")
-		x = pickle.load(file)
-		print(x.score(self.data))
-		print(x.attributes)
-		file.close()
+		self.tabs.addTab(self.ETLTabs, "Preprocess")
+		self.tabs.addTab(self.testTabs, "Training - Testing")
 
 	def renderETLTab(self):
 		self.tableWidget = QTableWidget(self.ETLTabs)
@@ -83,8 +58,7 @@ class AppWindow(QMainWindow):
 		self.preprocessGroupBox.resize(150, 70)
 		preprocessLayout = QFormLayout()
 		self.preprocessButton = QPushButton("Preprocess")
-		# self.preprocessButton.clicked.connect(self.preprocessData)
-		self.preprocessButton.clicked.connect(self.testNew)
+		self.preprocessButton.clicked.connect(self.preprocess_data)
 		preprocessLayout.addRow(self.preprocessButton)
 		self.preprocessGroupBox.setLayout(preprocessLayout)
 		# Preprocess button (END)
@@ -99,7 +73,7 @@ class AppWindow(QMainWindow):
 		kFoldValueTextbox.setText("10")
 		kFoldLayout.addRow(QLabel("k"), kFoldValueTextbox)
 		kFoldButton = QPushButton("Fold!")
-		kFoldButton.clicked.connect(lambda: self.foldData(int(kFoldValueTextbox.text())))
+		kFoldButton.clicked.connect(lambda: self.fold_data(int(kFoldValueTextbox.text())))
 		kFoldLayout.addRow(kFoldButton)
 		self.kFoldGroupBox.setLayout(kFoldLayout)
 		# k-Fold button (END)
@@ -118,25 +92,10 @@ class AppWindow(QMainWindow):
 		dataTypeComboBox.addItem("Testing Data")
 		viewDataLayout.addRow(QLabel("Type"), dataTypeComboBox)
 		viewDataButton = QPushButton("View Data")
-		viewDataButton.clicked.connect(lambda: self.viewData(int(kNumTextBox.text()), dataTypeComboBox.currentText()))
+		viewDataButton.clicked.connect(lambda: self.view_data(int(kNumTextBox.text()), dataTypeComboBox.currentText()))
 		viewDataLayout.addRow(viewDataButton)
 		self.viewDataGroupBox.setLayout(viewDataLayout)
 		# View data layout (END)
-
-		# self.saveDataButton = QPushButton("Save Data", self.ETLTabs)
-		# self.saveDataButton.move(520, 180)
-		# self.saveDataButton.clicked.connect(self.saveData)
-
-		# Training button
-		self.trainC45GroupBox = QGroupBox("Train C4.5", self.ETLTabs)
-		self.trainC45GroupBox.move(450, 350)
-		self.trainC45GroupBox.resize(150, 70)
-		trainC45Layout = QFormLayout()
-		trainC45Button = QPushButton("Train C4.5")
-		trainC45Button.clicked.connect(self.trainModel)
-		trainC45Layout.addRow(trainC45Button)
-		self.trainC45GroupBox.setLayout(trainC45Layout)
-		# Training button (END)
 
 		self.positiveLabelCount = QLabel("Positive: -", self.ETLTabs)
 		self.positiveLabelCount.move(10, 390)
@@ -145,55 +104,14 @@ class AppWindow(QMainWindow):
 		self.neutralLabelCount = QLabel("Neutral: -", self.ETLTabs)
 		self.neutralLabelCount.move(290, 390)
 
-	def renderTrainingTab(self):
-		self.kFoldGroupBox = QGroupBox("k-Fold Cross Validation", self.trainTabs)
-		self.kFoldGroupBox.move(450, 30)
-		self.kFoldGroupBox.resize(150, 100)
-		kFoldLayout = QFormLayout()
-		kFoldValueTextbox = QLineEdit()
-		kFoldValueTextbox.setText("10")
-		kFoldLayout.addRow(QLabel("k"), kFoldValueTextbox)
-		kFoldButton = QPushButton("Fold!")
-		kFoldButton.clicked.connect(lambda: self.foldData(int(kFoldValueTextbox.text())))
-		kFoldLayout.addRow(kFoldButton)
-		self.kFoldGroupBox.setLayout(kFoldLayout)
-
-		self.viewDataGroupBox = QGroupBox("View Data", self.trainTabs)
-		self.viewDataGroupBox.move(450, 130)
-		self.viewDataGroupBox.resize(150, 120)
-		viewDataLayout = QFormLayout()
-		kNumTextBox = QLineEdit()
-		viewDataLayout.addRow(QLabel("k"), kNumTextBox)
-		dataTypeComboBox = QComboBox()
-		dataTypeComboBox.addItem("Training Data")
-		dataTypeComboBox.addItem("Testing Data")
-		viewDataLayout.addRow(QLabel("Type"), dataTypeComboBox)
-		viewDataButton = QPushButton("View Data")
-		viewDataButton.clicked.connect(lambda: self.viewData(int(kNumTextBox.text()), dataTypeComboBox.currentText()))
-		viewDataLayout.addRow(viewDataButton)
-		self.viewDataGroupBox.setLayout(viewDataLayout)
-
-		self.trainC45GroupBox = QGroupBox("Train C4.5", self.trainTabs)
-		self.trainC45GroupBox.move(450, 250)
-		self.trainC45GroupBox.resize(150, 100)
-		trainC45Layout = QFormLayout()
-		trainC45Layout.addRow(QLabel("Total Entropy: "), QLabel("0"))
-		trainC45Button = QPushButton("Train C4.5")
-		trainC45Button.clicked.connect(self.trainModel)
-		trainC45Layout.addRow(trainC45Button)
-		self.trainC45GroupBox.setLayout(trainC45Layout)
-
-		self.trainingTable = QTableWidget(self.trainTabs)
-		self.trainingTable.resize(420, 300)
-		self.trainingTable.move(10, 30)
-
 	def renderTestingTab(self):
-		self.testC45GroupBox = QGroupBox("Test C4.5", self.testTabs)
+		self.testC45GroupBox = QGroupBox("Train and Test C4.5", self.testTabs)
 		testC45Layout = QFormLayout()
-		testC45Button = QPushButton("Test C4.5")
-		testC45Button.clicked.connect(self.testModel)
+		testC45Button = QPushButton("Train and Test")
+		testC45Button.clicked.connect(self.train_and_test)
 		testC45Layout.addRow(testC45Button)
 		self.testC45GroupBox.setLayout(testC45Layout)
+		self.testC45GroupBox.resize(150, 70)
 		self.testC45GroupBox.move(440, 30)
 
 		self.attributeSelectionForm = QGroupBox("PSO Parameters", self.testTabs)
@@ -229,36 +147,17 @@ class AppWindow(QMainWindow):
 		self.importExcelMenu.triggered.connect(self.importExcel)
 		self.fileMenu.addAction(self.importExcelMenu)
 		self.loadDataMenu = QAction("Load Data", self)
-		self.loadDataMenu.triggered.connect(self.loadData)
+		self.loadDataMenu.triggered.connect(self.load_data)
 		self.fileMenu.addAction(self.loadDataMenu)
-		self.resetDatabaseMenu = QAction("Reset Database", self)
-		self.resetDatabaseMenu.triggered.connect(self.resetDatabase)
+		self.resetDatabaseMenu = QAction("Reset Data", self)
 		self.fileMenu.addAction(self.resetDatabaseMenu)
 
-	def loadData(self):
-		self.data = self.mainControl.loadData()
-		print(self.data)
-		self.renderTable(self.data)
-
-	def resetDatabase(self):
+	def fold_data(self, k):
 		try:
-			self.mainControl.resetDatabase()
-			self.logOutput.append("Database reset - all tables truncated")
-			self.statusBar().showMessage("Database reset successfully")
-		except:
-			self.msg = QMessageBox()
-			self.msg.setIcon(QMessageBox.Error)
-			self.msg.setWindowTitle("Error")
-			self.msg.setText("Error saat reset database")
-			self.msg.setStandardButtons(QMessageBox.Ok)
-			self.msg.show()
-
-	def foldData(self, k):
-		try:
-			self.mainControl.foldData(k, self)
+			self.mainControl.fold_data(k, self)
 			self.testingTable.setRowCount(k)
 			self.testingTable.setColumnCount(4)
-			self.testingTable.setHorizontalHeaderLabels(["Attrs", "C4.5", "C4.5 - PSO", "Removed Attrs"])
+			self.testingTable.setHorizontalHeaderLabels(["Attrs", "C4.5", "PSO - C4.5", "Removed Attrs"])
 			tableHeader = self.testingTable.horizontalHeader()
 			tableHeader.setSectionResizeMode(0, QHeaderView.Stretch)
 		except:
@@ -269,21 +168,28 @@ class AppWindow(QMainWindow):
 			self.msg.setStandardButtons(QMessageBox.Ok)
 			self.msg.show()
 
+	def load_data(self):
+		self.data = self.mainControl.load_data("data/preprocessed/preprocessed.pckl")
+		self.renderTable(self.data)
 
-	def saveData(self):
-		self.mainControl.saveData()
+	def save_data(self, data):
+		self.mainControl.save_data(data)
 
-	def trainModel(self):
-		clfs = self.mainControl.trainModel(self)
-		if clfs is not None:
-			for clf in clfs:
-				self.testingTable.setItem(clf.foldNumber - 1, 0, QTableWidgetItem(f"{len(clf.attributes)}"))
+	def train_model(self):
+		attrs = self.mainControl.train_model(self)
+		if attrs is not None:
+			for i, attr in enumerate(attrs):
+				self.testingTable.setItem(i, 0, QTableWidgetItem(f"{len(attr)}"))
 
-	def testModel(self):
-		clfs = self.mainControl.testModel()
-		if clfs is not None:
-			for clf in clfs:
-				self.testingTable.setItem(clf.foldNumber - 1, 1, QTableWidgetItem(f"{round(clf.accuracy, 2)}%"))
+	def train_and_test(self):
+		self.train_model()
+		self.test_model()
+
+	def test_model(self):
+		scores = self.mainControl.test_model()
+		if scores is not None:
+			for i, score in enumerate(scores):
+				self.testingTable.setItem(i, 1, QTableWidgetItem(f"{round(score * 100, 2)}%"))
 		else:
 			self.msg = QMessageBox()
 			self.msg.setIcon(QMessageBox.Warning)
@@ -306,19 +212,17 @@ class AppWindow(QMainWindow):
 			self.msg.setStandardButtons(QMessageBox.Ok)
 			self.msg.show()
 
-	def viewData(self, kth, dstype):
+	def view_data(self, kth, dstype):
 		try:
-			data = self.mainControl.getData(kth, dstype)
+			data = self.mainControl.get_data(kth, dstype)
 			self.tableWidget.setRowCount(len(data))
 			self.tableWidget.setColumnCount(2)
 			self.tableWidget.setHorizontalHeaderLabels(["Review", "Label"])
 			tableHeader = self.tableWidget.horizontalHeader()
 			tableHeader.setSectionResizeMode(0, QHeaderView.Stretch)
-			i = 0
-			for row in data:
-				self.tableWidget.setItem(i, 0, QTableWidgetItem(row[1]))
-				self.tableWidget.setItem(i, 1, QTableWidgetItem(row[2]))
-				i += 1
+			for i, (review, label) in enumerate(zip(data["Review"], data["Label"])):
+				self.tableWidget.setItem(i, 0, QTableWidgetItem(review))
+				self.tableWidget.setItem(i, 1, QTableWidgetItem(label))
 			self.tableWidget.show()
 		except:
 			self.msg = QMessageBox()
@@ -328,12 +232,13 @@ class AppWindow(QMainWindow):
 			self.msg.setStandardButtons(QMessageBox.Ok)
 			self.msg.show()
 
-	def preprocessData(self):
+	def preprocess_data(self):
 		try:
 			if self.data is None:
 				raise Exception("Anda harus mengimpor data terlebih dahulu")
-			self.data["Review"] = self.mainControl.preprocessData(self, self.data)
-			self.saveData()
+			self.data["Review"] = self.mainControl.preprocess_data(self, self.data)
+			self.data["Fold_Number"] = 0
+			self.save_data(self.data)
 		except:
 			self.msg = QMessageBox()
 			self.msg.setIcon(QMessageBox.Warning)

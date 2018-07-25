@@ -1,281 +1,200 @@
-from core.Connection import Connection
-from libs.TFIDF import TFIDF
-from libs.PSO import PSO
 from math import log
-from PyQt5.QtWidgets import QApplication
-import numpy as np
+from collections import Counter
+from entities.Node import Node
+from sklearn.feature_selection import mutual_info_classif
+import numpy as np, sys
 
 class C45:
 
-	def __init__(self, trainData, testData, foldNumber = 0):
-		self.trainData 		= np.array(trainData)
-		self.testData		= np.array(testData)
-		self.foldNumber 	= foldNumber
-		self.attributes 	= []
-		self.db 			= Connection.db
-		self.totalEntropy 	= 0
-		self.tree 			= None
-		self.accuracy		= 0
-		self.UI 			= None
-
-	def constructAttributes(self):
-		self.db.multiplesql("DELETE FROM attributes WHERE fold_number = " + str(self.foldNumber))
-		self.attributes = list(self.attributes)
-		for review in self.trainData[:,1]:
-			attributes = review.split(" ")
-			self.attributes.extend(attributes)
-
-		self.attributes = set(self.attributes)
-		for attribute in self.attributes:
-			sql = "INSERT INTO attributes(attribute, active, fold_number) VALUES('" + attribute + "', 1, " + str(self.foldNumber) + ")"
-			self.db.multiplesql(sql)
-
-	def retrieveAttributes(self):
-		# check if attributes are already constructed before
-		attributes = self.db.select("attributes", "fold_number = " + str(self.foldNumber))
-		if len(attributes) > 0:
-			self.attributes = []
-			for attr in attributes:
-				self.attributes.append(attr[1])
-		
-		# otherwise construct new attributes
-		else:
-			self.constructAttributes()
-
-	def calculateWeights(self):
-
-		self.constructAttributes()
-
-		self.tfidf = TFIDF(self.trainData, self.attributes)
-		self.tfidf.calculateTfIdf(self.UI)
-		self.tfidf.saveWeight(self.foldNumber, self.UI)
-
-	def calculateTotalEntropy(self):
-		data = self.db.query("SELECT label, COUNT(id) AS total FROM preprocessed_data WHERE fold_number = " + str(self.foldNumber) + " GROUP BY label")
-		length = 0
-		for row in data:
-			length += int(row[1])
+	def __init__(self, vectors, data):
+		self.vectors = vectors
+		self.data = data.reset_index()
+		self.npdata = data.as_matrix()
 		self.totalEntropy = 0
-		for row in data:
-			self.totalEntropy += (-1 * (row[1] / length) * log(row[1] / length, 10))
+		self.weights = self.vectors.weights
+		self.termsInfo = self.vectors.termIndex
+		self.attributes = np.array(list(self.termsInfo.keys()))
+		self.tree = None
+		self.scores = 0
 
-	def getDocumentsVector(self):
-		self.data = self.db.query("SELECT id_document, attribute, weight FROM weights WHERE fold_number = " + str(self.foldNumber))
+	def calculate_total_entropy(self):
+		self.totalEntropy = 0
+		labelCount = Counter(self.data["Label"])
+		labelValue = list(labelCount.values())
+		labelTotal = sum(labelValue)
+		for value in labelValue:
+			self.totalEntropy += (-1 * (value / labelTotal) * np.log10(value / labelTotal))
 
-	def getPossibleThresholds(self, attribute, excludedData = []):
-		possibleWeights = sorted(set([x[2] for x in self.data if x[1] == attribute and x[0] not in excludedData]))
-		possibleThresholds = []
-		for i in range(len(possibleWeights) - 1):
-			possibleThresholds.append((float(possibleWeights[i]) + float(possibleWeights[i + 1])) / 2)
+	def calculate_attribute_gain(self, attribute, threshold, excludedRows = ()):
+		leftChild, rightChild = self.get_child_nodes(attribute, threshold, excludedRows)
+		left = self.npdata[list(leftChild)]
+		right = self.npdata[list(rightChild)]
+		leftEntropy, leftTotal = self.calculate_entropy(left)
+		rightEntropy, rightTotal = self.calculate_entropy(right)
+		total = leftTotal + rightTotal
+		info = (leftTotal / total) * leftEntropy + (rightTotal / total) * rightEntropy if total != 0 else 0
+		return self.totalEntropy - info
 
-		return possibleThresholds
+	def calculate_entropy(self, data):
+		labelCount = Counter(data[:, -2])
+		labelValue = list(labelCount.values())
+		labelTotal = sum(labelValue)
+		entropy = sum(-1 * ((x / labelTotal) * (np.log10(x / labelTotal) if (x / labelTotal) != 0 else 0)) for x in labelValue) if labelTotal != 0 else 0
+		return entropy, labelTotal
 
-	def getThresholdValue(self, excludedData = [], parentNodeId = None, direction = "left"):
-		attributeThresholds = []
-		for attribute in self.attributes:
-			thresholds = self.getPossibleThresholds(attribute, excludedData)
+	def get_possible_thresholds(self, attribute, excludedRows = ()):
+		vectors = np.delete(self.weights, excludedRows, axis = 0)
+		weights = vectors[:, self.termsInfo[attribute]]
+		weights = sorted(set(weights))
+		weightCount = len(weights)
+		thresholds = []
+		for i in range(weightCount - 1):
+			thresholds.append((float(weights[i]) + float(weights[i + 1])) / 2)
+		return thresholds
+
+	def pruning(self, excludedRows = ()):
+		attrThresholds = []
+		for attr in self.attributes:
+			thresholds = self.get_possible_thresholds(attr, excludedRows)
 			if len(thresholds) <= 0:
 				continue
-
 			thresholdGain = []
 			for threshold in thresholds:
-				gain = self.calculateAttributeGain(attribute, threshold, excludedData)
+				gain = self.calculate_attribute_gain(attr, threshold, excludedRows)
 				thresholdGain.append([threshold, gain])
-			
 			thresholdGain = sorted(thresholdGain, key = lambda x: x[1], reverse = True)
-			attributeThreshold = [attribute]
-			attributeThreshold.extend(thresholdGain[0])
-			attributeThresholds.append(attributeThreshold)
-		
-		attributeThresholds = sorted(attributeThresholds, key = lambda x: x[2], reverse = True)
-		if len(attributeThresholds) > 0:
-			selectedAttribute = attributeThresholds[0]
-			
-			nodeType = "root" if self.tree is None else "attribute"
-			insertId = 0
+			attrThreshold = [attr]
+			attrThreshold.extend(thresholdGain[0])
+			attrThresholds.append(attrThreshold)
+		return sorted(attrThresholds, key = lambda x: x[2], reverse = True)
+
+	def get_child_nodes(self, attribute, threshold, excludedRows = ()):
+		leftIdx = np.where(self.weights[:, self.termsInfo[attribute]] <= threshold)[0]
+		rightIdx = np.where(self.weights[:, self.termsInfo[attribute]] > threshold)[0]
+		leftChild = np.array(list(set(leftIdx) - set(excludedRows)))
+		rightChild = np.array(list(set(rightIdx) - set(excludedRows)))
+
+		return leftChild, rightChild
+
+	def attach_node(self, excludedRows = (), parentNode = None, direction = "left"):
+		attrThresholds = self.pruning(excludedRows)
+		if len(attrThresholds) > 0:
+			attr, threshold = attrThresholds[0][0], attrThresholds[0][1]
+
+			# create new node instance
+			newNode = Node(attr, threshold, "root" if self.tree is None else "branch")
 			if self.tree is None:
-				self.tree = True
-				self.db.multiplesql("INSERT INTO tree_nodes(type, value, threshold, fold_number) VALUES('" + nodeType + "', '" + selectedAttribute[0] + "', " + str(selectedAttribute[1]) + ", " + str(self.foldNumber) + ")")
-				insertId = self.db.insert_id()
-			else:
-				self.db.multiplesql("INSERT INTO tree_nodes(type, value, threshold, fold_number) VALUES('" + nodeType + "', '" + selectedAttribute[0] + "', " + str(selectedAttribute[1]) + ", " + str(self.foldNumber) + ")")
-				insertId = self.db.insert_id()
+				self.tree = newNode
+
+			# get left and right childs for the node
+			left, right = self.get_child_nodes(attr, threshold, excludedRows)
+
+			# get data exclusion for each child
+			leftExclusion = left if excludedRows == () else np.append(left, excludedRows)
+			rightExclusion = right if excludedRows == () else np.append(right, excludedRows)
+
+			# get left and right data
+			leftData = self.npdata[left]
+			rightData = self.npdata[right]
+
+			# count label occurence for each child
+			leftLabel, leftCount = np.unique(leftData[:, -2], return_counts = True)
+			rightLabel, rightCount = np.unique(rightData[:, -2], return_counts = True)
+
+			leftDataCount = len(left)
+			rightDataCount = len(right)
+
+			labels = np.unique(np.append(leftLabel, rightLabel))
+			labelCount = len(labels)
+
+			# attach child node
+			if parentNode is not None:
 				if direction == "left":
-					self.db.multiplesql("UPDATE tree_nodes SET left_node = " + str(insertId) + " WHERE node_id = " + str(parentNodeId))
-				elif direction == "right":
-					self.db.multiplesql("UPDATE tree_nodes SET right_node = " + str(insertId) + " WHERE node_id = " + str(parentNodeId))
-
-			left, right, leftData, rightData = self.getChildNodes(selectedAttribute[0], selectedAttribute[1], excludedData)
-			leftDataCount = len(leftData)
-			rightDataCount = len(rightData)
-
-			leftUnique, leftCounts = np.unique(left, return_counts = True)
-			rightUnique, rightCounts = np.unique(right, return_counts = True)
-
-			labels = np.append(leftUnique, rightUnique)
-
-			if len(np.unique(labels)) == 1:
-				self.db.multiplesql("UPDATE tree_nodes SET type = 'label', value = '" + labels[0] + "' WHERE node_id = " + str(insertId))
-			else:
-				if leftDataCount > 0:
-					rightData.extend(excludedData)
-					self.getThresholdValue(rightData, insertId, "left")
-
-				if rightDataCount > 0:
-					leftData.extend(excludedData)
-					self.getThresholdValue(leftData, insertId, "right")
+					parentNode.set_left_child(newNode)
 				
-	def getOptimizedThresholdValue(self, attributes, excludedData = [], parentNodeId = None, direction = "left"):
-		attributeThresholds = []
-		for _, attribute in enumerate(attributes):
-			thresholds = self.getPossibleThresholds(attribute, excludedData)
-			thresholdGain = []
-
-			for threshold in thresholds:
-				gain = self.calculateAttributeGain(attribute, threshold, excludedData)
-				thresholdGain.append([threshold, gain])
-			
-			if len(thresholdGain) > 0:
-				thresholdGain = sorted(thresholdGain, key = lambda x: x[1], reverse = True)
-				attributeThreshold = [attribute]
-				attributeThreshold.extend(thresholdGain[0])
-				attributeThresholds.append(attributeThreshold)
-			else:
-				print(attribute + " does not have any threshold possible")
-		
-		attributeThresholds = sorted(attributeThresholds, key = lambda x: x[2], reverse = True)
-		if len(attributeThresholds) > 0:
-			selectedAttribute = attributeThresholds[0]
-			
-			nodeType = "root" if self.tree is None else "attribute"
-			insertId = 0
-			if self.tree is None:
-				self.tree = True
-				self.db.multiplesql("INSERT INTO tree_nodes(type, value, threshold, fold_number) VALUES('" + nodeType + "', '" + selectedAttribute[0] + "', " + str(selectedAttribute[1]) + ", " + str(self.foldNumber) + ")")
-				insertId = self.db.insert_id()
-			else:
-				self.db.multiplesql("INSERT INTO tree_nodes(type, value, threshold, fold_number) VALUES('" + nodeType + "', '" + selectedAttribute[0] + "', " + str(selectedAttribute[1]) + ", " + str(self.foldNumber) + ")")
-				insertId = self.db.insert_id()
-				if direction == "left":
-					self.db.multiplesql("UPDATE tree_nodes SET left_node = " + str(insertId) + " WHERE node_id = " + str(parentNodeId))
 				elif direction == "right":
-					self.db.multiplesql("UPDATE tree_nodes SET right_node = " + str(insertId) + " WHERE node_id = " + str(parentNodeId))
+					parentNode.set_right_child(newNode)
 
-			left, right, leftData, rightData = self.getChildNodes(selectedAttribute[0], selectedAttribute[1], excludedData)
-			leftDataCount = len(leftData)
-			rightDataCount = len(rightData)
-
-			leftUnique, leftCounts = np.unique(left, return_counts = True)
-			rightUnique, rightCounts = np.unique(right, return_counts = True)
-
-			labels = np.append(leftUnique, rightUnique)
-
-			if len(np.unique(labels)) == 1:
-				self.db.multiplesql("UPDATE tree_nodes SET type = 'label', value = '" + labels[0] + "' WHERE node_id = " + str(insertId))
+			# set node type to label if there is only one label
+			if labelCount == 1:
+				newNode.set_type("leaf")
+				newNode.set_label(labels[0])
+			elif labelCount == 2:
+				if len(leftLabel) == 1:
+					leftLeafNode = Node("Label", threshold, "leaf")
+					leftLeafNode.set_label(leftLabel[0])
+					newNode.set_left_child(leftLeafNode)
+				if len(rightLabel) == 1:
+					rightLeafNode = Node("Label", threshold, "leaf")
+					rightLeafNode.set_label(rightLabel[0])
+					newNode.set_right_child(rightLeafNode)
 			else:
-				if leftDataCount > 0:
-					rightData.extend(excludedData)
-					self.getOptimizedThresholdValue(attributes, rightData, insertId, "left")
-
 				if rightDataCount > 0:
-					leftData.extend(excludedData)
-					self.getOptimizedThresholdValue(attributes, leftData, insertId, "right")
+					if rightDataCount == 1:
+						rightLeafNode = Node("Label", threshold, "leaf")
+						rightLeafNode.set_label(rightLabel[0])
+						newNode.set_right_child(rightLeafNode)
+					else:
+						self.attach_node(leftExclusion, newNode, "right")
+				if leftDataCount > 0:
+					if rightDataCount == 1:
+						leftLeafNode = Node("Label", threshold, "leaf")
+						leftLeafNode.set_label(leftLabel[0])
+						newNode.set_left_child(leftLeafNode)
+					else:
+						self.attach_node(rightExclusion, newNode, "left")
 
-	def getChildNodes(self, attribute, threshold, excludedData = []):
-		leftData = [x[0] for x in self.data if x[1] == attribute and x[2] <= threshold and x[0] not in excludedData]
-		left = np.array([x[2] for x in self.trainData if int(x[0]) in leftData])
-		rightData = [x[0] for x in self.data if x[1] == attribute and x[2] > threshold and x[0] not in excludedData]
-		right = np.array([x[2] for x in self.trainData if int(x[0]) in rightData])
-		return left, right, leftData, rightData
+	def train(self):
+		self.calculate_total_entropy()
+		self.attach_node()
+		return self
 
-
-	def calculateAttributeGain(self, attribute, threshold, excludedData = []):
-		left, right = self.getChildNodes(attribute, threshold, excludedData)[0:2]
-		
-		leftUnique, leftCounts = np.unique(left, return_counts = True)
-		leftTotal = sum(leftCounts)
-		rightUnique, rightCounts = np.unique(right, return_counts = True)
-		rightTotal = sum(rightCounts)
-		total = leftTotal + rightTotal
-
-		leftEntropy = sum(-1 * ((x / leftTotal) * (log(x / leftTotal, 10) if (x / leftTotal) != 0 else 0)) for x in leftCounts) if leftTotal != 0 else 0
-		rightEntropy = sum(-1 * ((x / rightTotal) * (log(x / rightTotal, 10) if (x / rightTotal) != 0 else 0)) for x in rightCounts) if rightTotal != 0 else 0
-
-		info = (leftTotal / total) * leftEntropy + (rightTotal / total) * rightEntropy
-		gain = self.totalEntropy - info
-		return gain
-
-	def constructTree(self, UI = None):
-		self.UI = UI
-		if self.UI is not None:
-			self.UI.logOutput.append(f"Constructing tree {self.foldNumber}")
-			QApplication.processEvents()
-
-		self.db.multiplesql("DELETE FROM weights WHERE fold_number = " + str(self.foldNumber))
-		self.db.multiplesql("DELETE FROM attributes WHERE fold_number = " + str(self.foldNumber))
-		self.db.multiplesql("DELETE FROM tree_nodes WHERE fold_number = " + str(self.foldNumber))
-		self.calculateTotalEntropy()
-		self.calculateWeights()
-		self.getDocumentsVector()
-		self.getThresholdValue()
-
-	def constructOptimizedTree(self, selectedAttributes):
-		self.db.multiplesql("DELETE FROM tree_nodes WHERE fold_number = " + str(self.foldNumber))
-		self.tree = None
-		self.getOptimizedThresholdValue(selectedAttributes)
-
-	def evaluate(self, docVector):
-		idf = docVector.idf
-		correct, incorrect = 0, 0
-		if self.tree == True or self.tree is None:
-			self.tree = self.db.query("SELECT * FROM tree_nodes WHERE fold_number = " + str(self.foldNumber))
-
-		if len(self.tree) <= 0:
-			return 0
-
-		for data in self.testData:
-			tokens = data[1].split(" ")
-			tfidf_val = {}
-			for token in tokens:
-				tfidf_val[token] = docVector.tf(token, data[1]) * (idf[token] if token in idf else 0)
-			node = [x for x in self.tree if x[1] == "root" and x[6] == self.foldNumber][0]
-			if self.traverseChild(node, tfidf_val[node[2]] if node[2] in tfidf_val else 0, data[2], tfidf_val):
-				correct += 1
+	def traverse(self, row, vectors, tfidf, currNode = None):
+		currNode = currNode or self.tree
+		if currNode is not None:
+			if currNode.nodeType == "leaf":
+				return currNode.label
 			else:
-				incorrect += 1
-
-		return correct / (correct + incorrect) * 100 # accuracy
-
-	def traverseChild(self, node, weight, label, tfidf_val):
-		if node[1] == "label":
-			return node[2] == label
-
-		threshold = node[3]
-		if weight > threshold:
-			if node[5] is not None:
-				childNode = [x for x in self.tree if x[0] == node[5]]
-				if len(childNode) <= 0:
-					childNode = [x for x in self.tree if x[0] == node[4]]
-					return False if len(childNode) <= 0 else self.traverseChild(childNode[0], tfidf_val[childNode[0][2]] if childNode[0][2] in tfidf_val else 0, label, tfidf_val)
+				weight = vectors[:, tfidf.termIndex[currNode.attribute]][row]
+				if weight <= currNode.threshold:
+					if currNode.left is None:
+						if currNode.right is not None:
+							self.traverse(row, vectors, tfidf, currNode.right)
+						return False
+					return self.traverse(row, vectors, tfidf, currNode.left)
 				else:
-					childNode = childNode[0]
-					return self.traverseChild(childNode, tfidf_val[childNode[2]] if childNode[2] in tfidf_val else 0, label, tfidf_val)
-		else:
-			if node[4] is not None:
-				childNode = [x for x in self.tree if x[0] == node[4]]
-				if len(childNode) <= 0:
-					childNode = [x for x in self.tree if x[0] == node[5]]
-					return False if len(childNode) <= 0 else self.traverseChild(childNode[0], tfidf_val[childNode[0][2]] if childNode[0][2] in tfidf_val else 0, label, tfidf_val)
-				else:
-					childNode = childNode[0]
-					return self.traverseChild(childNode, tfidf_val[childNode[2]] if childNode[2] in tfidf_val else 0, label, tfidf_val)
+					if currNode.right is None:
+						if currNode.left is not None:
+							self.traverse(row, vectors, tfidf, currNode.left)
+						return False
+					return self.traverse(row, vectors, tfidf, currNode.right)
 
+		return False
 
-	def optimize(self, populationSize, numIteration, c1, c2, target):
-		self.retrieveAttributes()
-		pso = PSO(len(self.attributes), populationSize, numIteration, c1, c2, self.accuracy)
-		fittest = pso.exec(self)
-		print(f"Optimized tree {self.foldNumber} accuracy: {fittest.best}%")
-		print(f"Tree {self.foldNumber} removed attributes: {list(fittest.position).count(0)}")
-		print(f"{fittest.position}")
-		return fittest
+	def fit(self, docs, labels):
+		self.train()
+
+	def show_tree(self, currNode = None):
+		currNode = currNode or self.tree
+		if currNode is not None:
+			if currNode.nodeType == "leaf":
+				print(currNode.label)
+			else:
+				print(currNode.attribute, currNode.threshold)
+				print(currNode.left.attribute if currNode.left is not None else None, currNode.right.attribute if currNode.right is not None else None)
+				if currNode.left is not None:
+					print("Go left")
+					self.show_tree(currNode.left)
+				if currNode.right is not None:
+					print("Go right")
+					self.show_tree(currNode.right)
+
+	def predict(self, tfidf, docs):
+		vect = tfidf.test_tfidf(docs)
+		return np.array([self.traverse(i, vect, tfidf) for i, _ in enumerate(docs)])
+
+	def score(self, tfidf, data):
+		predicted = self.predict(tfidf, data["Review"])
+		actual = np.array(data["Label"])
+		at, cm = np.unique(predicted == actual, return_counts=True)
+		return (0 if True not in at else (cm[0] if len(at) == 1 else cm[1])) / np.sum(cm)

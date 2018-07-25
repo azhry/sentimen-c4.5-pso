@@ -1,47 +1,32 @@
-# import pyximport; pyximport.install()
-# from pyx.Particle import Particle
-# from entities.Particle import Particle as P2
-# import time, numpy as np, matplotlib.pyplot as plt
+# from sklearn import tree
+# from libs.TFIDF_revised import TFIDF_revised
+# from entities.Storage import Storage
+# from libs.C45 import C45
+# from sklearn.externals.six import StringIO  
+# from IPython.display import Image
+# import pydotplus
 
-# start = time.time()
-# p = Particle(10)
-# for _ in range(100000):
-# 	p.chaoticTentMap()
+# clf = tree.DecisionTreeClassifier()
+# s = Storage()
 
-# end = time.time()
+# for i in range(1):
+# 	train, test = (s.load(f"data/folds/train{i + 1}.pckl"), s.load(f"data/folds/test{i + 1}.pckl"))
+# 	tfidf = TFIDF_revised(train["Review"])
+# 	clf = clf.fit(tfidf.weights, train["Label"])
+# 	file = open(f"tree{i}.txt", "w")
+# 	tree.export_graphviz(clf, out_file=file, feature_names=tfidf.count_vect.get_feature_names(), class_names=list(train["Label"]), filled=True)
 
-# start_2 = time.time()
-# p = P2(10)
-# for _ in range(100000):
-# 	p.chaoticTentMap()
+# from entities.Storage import Storage
+# from libs.TFIDF_revised import TFIDF_revised
+# from sklearn.feature_selection import mutual_info_classif
+# from sklearn.feature_extraction.text import CountVectorizer
 
-# end_2 = time.time()
+# s = Storage()
+# train, test = (s.load(f"data/folds/train{1}.pckl"), s.load(f"data/folds/test{1}.pckl"))
 
-# result = end - start
-# result_2 = end_2 - start_2
-# print(f"Cythonized particle executed in {round(result, 2)}s")
-# print(f"Pure particle executed in {round(result_2, 2)}s")
+# tfidf = TFIDF_revised(train["Review"])
 
-# x_axis = ("Cython", "Python")
-# y_axis = np.arange(len(x_axis))
-# x_values = [round(result, 2), round(result_2, 2)]
+# res = dict(zip(tfidf.count_vect.get_feature_names(), mutual_info_classif(tfidf.weights[0:4], train.iloc[0:4]["Label"], discrete_features=False, random_state=100)))
 
-# plt.bar(y_axis, x_values, align="center")
-# plt.xticks(y_axis, x_axis)
-# plt.ylabel("Time(s)")
-# plt.title(f"Result = {int(result_2/result)}x speed improved")
+# print(sorted(res.items(), key=lambda x: x[1], reverse=True))
 
-# plt.show()
-
-import numpy as np
-
-def f(x):
-	y = x
-	if len(x) == 4:
-		print("base case")
-		return
-	print(y)
-	f([1, 2, 3, 4])
-	print(y)
-
-f(np.array([1, 2, 3]))
