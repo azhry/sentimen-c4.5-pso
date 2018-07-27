@@ -171,8 +171,6 @@ class C45:
 
 		return False
 
-	def fit(self, docs, labels):
-		self.train()
 
 	def show_tree(self, currNode = None):
 		currNode = currNode or self.tree

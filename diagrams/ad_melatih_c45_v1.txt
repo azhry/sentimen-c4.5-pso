@@ -1,0 +1,20 @@
+@startuml
+| Peneliti |
+start
+:Memasukkan nilai k pada form k-Fold Cross Validation;
+:Menekan tombol fold!;
+| Sistem |
+:Membagi data menjadi k bagian;
+| Peneliti |
+:Memilih menu Training - Testing;
+| Sistem |
+:Menampilkan menu Training - Testing;
+| Peneliti |
+:Menekan tombol Train and Test;
+| Sistem |
+:Melakukan konstruksi atribut menggunakan TF-IDF;
+:Melakukan proses pelatihan algoritma C4.5;
+:Melakukan proses pengujian algoritma C4.5;
+:Menampilkan hasil akurasi pengujian algoritma C4.5;
+stop
+@enduml

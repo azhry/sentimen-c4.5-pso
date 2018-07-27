@@ -126,12 +126,12 @@ class AppWindow(QMainWindow):
 		c2ValueTextBox.setText("0.5")
 		attributeSelectionLayout.addRow(popSizeLabel, popSizeTextBox)
 		attributeSelectionLayout.addRow(iterLabel, numIterationTextBox)
-		attributeSelectionLayout.addRow(targetLabel, targetTextBox)
+		# attributeSelectionLayout.addRow(targetLabel, targetTextBox)
 		attributeSelectionLayout.addRow(c1Label, c1ValueTextBox)
 		attributeSelectionLayout.addRow(c2Label, c2ValueTextBox)
 		optimizeC45Button = QPushButton("Optimize C4.5")
 
-		optimizeC45Button.clicked.connect(lambda: self.optimizeModel(int(popSizeTextBox.text()), int(numIterationTextBox.text()), float(c1ValueTextBox.text()), float(c2ValueTextBox.text()), float(targetTextBox.text())))
+		optimizeC45Button.clicked.connect(lambda: self.optimize_model(int(popSizeTextBox.text()), int(numIterationTextBox.text()), float(c1ValueTextBox.text()), float(c2ValueTextBox.text())))
 		
 		attributeSelectionLayout.addRow(optimizeC45Button)
 		self.attributeSelectionForm.setLayout(attributeSelectionLayout)
@@ -198,19 +198,19 @@ class AppWindow(QMainWindow):
 			self.msg.setStandardButtons(QMessageBox.Ok)
 			self.msg.show()
 
-	def optimizeModel(self, populationSize, numIteration, c1, c2, target):
-		try:
-			results = self.mainControl.optimizeModel(populationSize, numIteration, c1, c2, target)
-			for result in results:
-				self.testingTable.setItem(result[0] - 1, 2, QTableWidgetItem(f"{round(result[1].best, 2)}%"))
-				self.testingTable.setItem(result[0] - 1, 3, QTableWidgetItem(f"{list(result[1].position).count(0)}"))
-		except:
-			self.msg = QMessageBox()
-			self.msg.setIcon(QMessageBox.Warning)
-			self.msg.setWindowTitle("Warning")
-			self.msg.setText("Testing: anda harus memasukkan nilai parameter PSO")
-			self.msg.setStandardButtons(QMessageBox.Ok)
-			self.msg.show()
+	def optimize_model(self, popSize, numIteration, c1, c2):
+		# try:
+		results = self.mainControl.optimize_model(popSize, numIteration, c1, c2)
+		for i, result in enumerate(results):
+			self.testingTable.setItem(i, 2, QTableWidgetItem(f"{round(result.best * 100, 2)}%"))
+			self.testingTable.setItem(i, 3, QTableWidgetItem(f"{list(result.position).count(0)}"))
+		# except:
+		# 	self.msg = QMessageBox()
+		# 	self.msg.setIcon(QMessageBox.Warning)
+		# 	self.msg.setWindowTitle("Warning")
+		# 	self.msg.setText("Testing: anda harus memasukkan nilai parameter PSO")
+		# 	self.msg.setStandardButtons(QMessageBox.Ok)
+		# 	self.msg.show()
 
 	def view_data(self, kth, dstype):
 		try:

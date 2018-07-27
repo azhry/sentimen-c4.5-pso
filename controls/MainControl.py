@@ -11,7 +11,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import QThreadPool, QEventLoop
 from sklearn.model_selection import KFold
-from sklearn import tree
+from libs.PSO import PSO
 import sys, time
 import numpy as np, os
 
@@ -137,6 +137,19 @@ class MainControl():
 			self.clfs[i].scores = self.clfs[i].score(self.tfidfs[i], test)
 			scores[i] = self.clfs[i].scores
 		return scores
+
+	def optimize_model(self, popSize, numIteration, c1, c2):
+		results = []
+		for i in range(self.k):
+			train, test = self.storage.load(f"data/folds/train{i + 1}.pckl"), self.storage.load(f"data/folds/test{i + 1}.pckl")
+			clf = self.storage.load(f"data/models/tree{i + 1}.pckl")
+			particleSize = len(clf.termsInfo)
+			pso = PSO(particleSize, popSize, numIteration, c1, c2, clf.scores)
+			bestParticle = pso.exec(train, test)
+			results.append(bestParticle)
+			self.storage.save(bestParticle, f"data/particles/particle{i + 1}.pckl")
+		return results
+
 
 	def optimizeModel(self, popSize, numIteration, c1, c2, target):
 		results = []

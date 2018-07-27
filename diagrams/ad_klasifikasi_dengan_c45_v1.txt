@@ -1,0 +1,40 @@
+@startuml
+| Peneliti |
+start
+:Memilih menu Import Excel;
+| Sistem |
+:Menampilkan kotak dialog pencarian berkas;
+| Peneliti |
+:Memilih berkas dan menekan tombol buka;
+| Sistem |
+:Menampilkan data yang diimpor;
+| Peneliti |
+:Menekan tombol preprocess;
+| Sistem |
+:Melakukan praproses data yang ada pada berkas;
+:Menyimpan hasil praproses;
+:Menampilkan data yang telah dipraproses;
+| Peneliti |
+:Memasukkan nilai k pada form k-Fold Cross Validation;
+:Menekan tombol fold!;
+| Sistem |
+:Membagi data menjadi k bagian;
+| Peneliti |
+:Memilih menu Training - Testing;
+| Sistem |
+:Menampilkan menu Training - Testing;
+| Peneliti |
+:Menekan tombol Train and Test;
+| Sistem |
+:Melakukan konstruksi atribut menggunakan TF-IDF;
+:Melakukan proses pelatihan algoritma C4.5;
+:Melakukan proses pengujian algoritma C4.5;
+:Menampilkan hasil akurasi pengujian algoritma C4.5;
+| Peneliti |
+:Memasukkan parameter PSO;
+:Menekan tombol Optimize C4.5;
+| Sistem |
+:Melakukan optimasi C4.5 dengan PSO;
+:Menampilkan hasil optimasi PSO;
+stop
+@enduml

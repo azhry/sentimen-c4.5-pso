@@ -1,0 +1,10 @@
+@startuml
+| Peneliti |
+start
+:Menekan tombol preprocess;
+| Sistem |
+:Melakukan praproses data yang ada pada berkas;
+:Menyimpan hasil praproses;
+:Menampilkan data yang telah dipraproses;
+stop
+@enduml

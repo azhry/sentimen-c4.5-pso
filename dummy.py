@@ -1,32 +1,47 @@
-# from sklearn import tree
-# from libs.TFIDF_revised import TFIDF_revised
-# from entities.Storage import Storage
+# from libs.PSO import PSO
+# from libs.TFIDF import TFIDF
 # from libs.C45 import C45
-# from sklearn.externals.six import StringIO  
-# from IPython.display import Image
-# import pydotplus
-
-# clf = tree.DecisionTreeClassifier()
-# s = Storage()
-
-# for i in range(1):
-# 	train, test = (s.load(f"data/folds/train{i + 1}.pckl"), s.load(f"data/folds/test{i + 1}.pckl"))
-# 	tfidf = TFIDF_revised(train["Review"])
-# 	clf = clf.fit(tfidf.weights, train["Label"])
-# 	file = open(f"tree{i}.txt", "w")
-# 	tree.export_graphviz(clf, out_file=file, feature_names=tfidf.count_vect.get_feature_names(), class_names=list(train["Label"]), filled=True)
-
 # from entities.Storage import Storage
-# from libs.TFIDF_revised import TFIDF_revised
-# from sklearn.feature_selection import mutual_info_classif
-# from sklearn.feature_extraction.text import CountVectorizer
+# import matplotlib, numpy as np
+# import matplotlib.pyplot as plt
 
 # s = Storage()
-# train, test = (s.load(f"data/folds/train{1}.pckl"), s.load(f"data/folds/test{1}.pckl"))
+# train = s.load("data/folds/train1.pckl")
+# test = s.load("data/folds/test1.pckl")
 
-# tfidf = TFIDF_revised(train["Review"])
+# tfidf = TFIDF(train["Review"])
+# tfidf.weights = tfidf.remove_zero_tfidf(tfidf.weights, 0.5)
+# clf = C45(tfidf, train)
+# clf.train()
+# score = clf.score(tfidf, test)
+# print(f"C4.5 score: {score}")
 
-# res = dict(zip(tfidf.count_vect.get_feature_names(), mutual_info_classif(tfidf.weights[0:4], train.iloc[0:4]["Label"], discrete_features=False, random_state=100)))
+# particleSize = len(clf.termsInfo)
+# popSize = 5
+# iteration = 10
+# c1, c2 = 0.5, 0.7
+# target = score + 0.25
+# pso = PSO(particleSize, popSize, iteration, c1, c2, target)
+# pso.exec(train, test)
 
-# print(sorted(res.items(), key=lambda x: x[1], reverse=True))
+# x = len(pso.iterationBest)
+# xAxis = [i for i in range(x)]
+# fig, ax = plt.subplots()
+# ax.plot(xAxis, pso.iterationBest)
+# ax.plot(xAxis, [score for _ in range(x)])
+# ax.set(xlabel="Iteration", ylabel="Particle Best", title="Particle Best Graph")
+# plt.yticks(np.arange(score - 0.2, score + 0.2, 0.1))
+# plt.show()
 
+from entities.Particle import Particle
+import matplotlib, numpy as np
+import matplotlib.pyplot as plt
+
+p = Particle(10)
+loops = 150
+lst = [p.tent_map() for _ in range(loops)]
+fig, ax = plt.subplots()
+ax.plot([i for i in range(loops)], lst)
+ax.set(xlabel="Iteration", ylabel="Weight", title="Tent Mapping")
+plt.yticks(np.arange(0.0, 1.0 + 0.1, 0.1))
+plt.show()

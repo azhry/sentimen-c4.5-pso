@@ -1,0 +1,12 @@
+@startuml
+| Peneliti |
+start
+:Memilih menu Import Excel;
+| Sistem |
+:Menampilkan kotak dialog pencarian berkas;
+| Peneliti |
+:Memilih berkas dan menekan tombol buka;
+| Sistem |
+:Menampilkan data yang dimuat;
+stop
+@enduml

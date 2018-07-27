@@ -1,6 +1,6 @@
-import numpy as np
-import random, math
+import numpy as np, random, math
 from libs.TFIDF import TFIDF
+from libs.C45 import C45
 
 class Particle:
 
@@ -12,13 +12,13 @@ class Particle:
 		self.currBestPosition = self.position
 		self.inertiaWeight = random.uniform(0, 1)
 
-	def updateVelocity(self, c1, c2, particleBestPosition):
-		self.velocity = np.array([self.calculateVelocity(v, c1, c2, px, pbx, x) for v, px, x, pbx in zip(self.velocity, self.position, self.currBestPosition, particleBestPosition)])
+	def update_velocity(self, c1, c2, particleBestPosition):
+		self.velocity = np.array([self.calculate_velocity(v, c1, c2, px, pbx, x) for v, px, x, pbx in zip(self.velocity, self.position, self.currBestPosition, particleBestPosition)])
 
-	def updatePosition(self):
+	def update_position(self):
 		self.position = np.array([(1 if self.sigmoid(v) > random.uniform(0, 1) else 0) for v in self.velocity])
 
-	def calculateVelocity(self, v0, c1, c2, px, pbx, x):
+	def calculate_velocity(self, v0, c1, c2, px, pbx, x):
 		return self.inertiaWeight * v0 + c1 * random.uniform(0, 1) * (px - pbx) + c2 * random.uniform(0, 1) * (px - x)
 
 	def sigmoid(self, v):
@@ -26,16 +26,20 @@ class Particle:
 			return 1 - (1 / (1 + math.exp(-v)))
 		return 1 / (1 + math.exp(-v))
 
-	def calculateBest(self, clf):
-		attributes = np.array(clf.attributes)[self.position.astype(bool)]
-		tfidf = TFIDF(clf.trainData, attributes)
-		tfidf.calculateIdf()
-		clf.constructOptimizedTree(attributes)
-		self.best = clf.evaluate(tfidf)
+	def calculate_best(self, train, test):
+		pos = self.position.astype(bool)
+		tfidf = TFIDF(train["Review"])
+		tfidf.weights = tfidf.remove_zero_tfidf(tfidf.weights, 0.5)
+		tfidf.termIndex = {key:val for i, (key, val) in enumerate(tfidf.termIndex.items()) if pos[i] == True}
+		print(f"Selected attributes: {len(tfidf.termIndex)}")
+		clf = C45(tfidf, train)
+		clf.train()
+		self.best = clf.score(tfidf, test)
 		return self.best
 
-	def chaoticTentMap(self):
+	def tent_map(self):
 		if self.inertiaWeight < 0.7:
 			self.inertiaWeight = self.inertiaWeight / 0.7
 		else:
-			self.inertiaWeight = 10 / (3 * self.inertiaWeight * (1 - self.inertiaWeight))
+			self.inertiaWeight = (10 / 3) * (self.inertiaWeight * (1 - self.inertiaWeight))
+		return self.inertiaWeight

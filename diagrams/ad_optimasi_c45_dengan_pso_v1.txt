@@ -1,0 +1,19 @@
+@startuml
+| Peneliti |
+start
+:Memasukkan nilai k pada form k-Fold Cross Validation;
+:Menekan tombol fold!;
+| Sistem |
+:Membagi data menjadi k bagian;
+| Peneliti |
+:Memilih menu Training - Testing;
+| Sistem |
+:Menampilkan menu Training - Testing;
+| Peneliti |
+:Memasukkan parameter PSO;
+:Menekan tombol Optimize C4.5;
+| Sistem |
+:Melakukan optimasi C4.5 dengan PSO;
+:Menampilkan hasil optimasi PSO;
+stop
+@enduml
