@@ -1,0 +1,120 @@
+@startuml
+hide footbox
+title Optimasi C4.5 dengan PSO\n
+
+actor Peneliti
+boundary AppWindow
+control MainControl
+control PSO
+entity Storage
+entity Particle
+control TFIDF
+control C45
+
+activate Peneliti
+Peneliti -> AppWindow : fold_data(k)
+activate AppWindow
+AppWindow -> MainControl : fold_data(k, UI)
+activate MainControl
+MainControl -> Storage : load(filename)
+activate Storage
+Storage --> MainControl : preprocessed_data
+deactivate Storage
+loop train, test in split(preprocessed_data)
+   MainControl -> Storage : save(train, filename)
+   activate Storage
+   deactivate Storage
+   MainControl -> Storage : save(test, filename)
+   activate Storage
+   deactivate Storage
+end
+deactivate MainControl
+deactivate AppWindow
+Peneliti -> AppWindow : optimize_model(popSize,\nnumIteration, c1, c2)
+activate AppWindow
+AppWindow -> MainControl : optimize_model(popSize,\nnumIteration, c1, c2)
+activate MainControl
+loop i < k
+   MainControl -> Storage : load(train[i])
+   activate Storage
+   Storage --> MainControl : train[i]
+   deactivate Storage
+   MainControl -> Storage : load(test[i])
+   activate Storage
+   Storage --> MainControl : test[i]
+   deactivate Storage
+   MainControl -> Storage : load(tree[i])
+   activate Storage
+   Storage --> MainControl : tree[i]
+   deactivate Storage
+   create PSO
+   MainControl -> PSO : <<PSO(particleSize, popSize,\nnumIteration, c1, c2, target)>>
+   MainControl -> PSO : exec(train[i], test[i])
+   activate PSO
+   loop j < numIteration
+      loop l < popSize
+         PSO -> Particle : calculate_best(train[i], test[i])
+         activate Particle
+         create TFIDF
+         Particle -> TFIDF : <<TFIDF(train_review)>>
+         Particle -> TFIDF : remove_zero_tfidf(weights, threshold)
+         activate TFIDF
+         TFIDF --> Particle : filtered_weights
+         deactivate TFIDF
+         create C45
+         Particle -> C45 : <<C45(tfidf, train[i])>>
+         Particle -> C45 : train()
+         activate C45
+         deactivate C45
+         Particle -> C45 : score(tfidf, test[i])
+         activate C45
+         C45 -> C45 : predict(tfidf, review)
+         activate C45
+         C45 -> TFIDF : test_tfidf(review)
+         activate TFIDF
+         TFIDF --> C45 : tfidf
+         deactivate TFIDF
+         C45 --> C45 : predicted_labels
+         deactivate C45
+         C45 --> Particle : score
+         deactivate C45
+         Particle --> PSO : best
+         deactivate Particle
+         PSO -> Particle : tent_map()
+         activate Particle
+         deactivate Particle
+      end
+      alt best > target
+         PSO --> MainControl : bestParticle
+      else
+         loop l < popSize
+            PSO -> Particle : update_velocity(c1, c2, position)
+            activate Particle
+            loop v, px, x, pbx in velocity,\nposition, currBestPosition, particleBestPosition
+               Particle -> Particle : calculate_velocity(v, c1, c2, px, pbx, x)
+               activate Particle
+               Particle --> Particle : velocity
+               deactivate Particle
+            end
+            deactivate Particle
+            PSO -> Particle : update_position()
+            activate Particle
+            loop v in velocity
+               Particle -> Particle : sigmoid(v)
+               activate Particle
+               Particle --> Particle : sigmoid
+               deactivate Particle
+            end
+            deactivate Particle
+         end
+      end
+   end
+   PSO --> MainControl : bestParticle
+   deactivate PSO
+   MainControl -> Storage : save(bestParticle, filename)
+   activate Storage
+   deactivate Storage
+end
+MainControl --> AppWindow : optimized_models
+deactivate MainControl
+@enduml

@@ -1,0 +1,14 @@
+@startuml
+| Peneliti |
+start
+:Memasukkan nilai k;
+:Memilih jenis data yang ingin dilihat;
+:Menekan tombol View Data;
+| Sistem |
+if (jenis data?) then (**Training Data**)
+   :Menampilkan data pelatihan ke k;
+else (**Testing Data**)
+   :Menampilkan data pengujian ke k;
+endif
+stop
+@enduml

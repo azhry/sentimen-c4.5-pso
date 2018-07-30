@@ -1,0 +1,216 @@
+@startuml
+hide footbox
+title Klasifikasi dengan C4.5\n
+
+actor Peneliti
+boundary AppWindow
+control MainControl
+control DataImporter
+control Preprocessor
+control Worker
+control TFIDF
+control C45
+entity Storage
+
+activate Peneliti
+ref over Peneliti, AppWindow, MainControl, DataImporter : Memuat Data
+ref over Peneliti, AppWindow, MainControl, Preprocessor, Storage : Praproses Data
+
+Peneliti -> AppWindow : fold_data(k)
+activate AppWindow
+AppWindow -> MainControl : fold_data(k, UI)
+activate MainControl
+MainControl -> Storage : load(filename)
+activate Storage
+Storage --> MainControl : preprocessed_data
+deactivate Storage
+loop train, test in split(preprocessed_data)
+   MainControl -> Storage : save(train, filename)
+   activate Storage
+   deactivate Storage
+   MainControl -> Storage : save(test, filename)
+   activate Storage
+   deactivate Storage
+end
+deactivate MainControl
+deactivate AppWindow
+Peneliti -> AppWindow : train_and_test()
+activate AppWindow
+AppWindow -> AppWindow : train_model()
+activate AppWindow
+AppWindow -> MainControl : train_model(UI)
+activate MainControl
+loop i < k
+   create Worker
+   MainControl -> Worker : <<Worker(mltrain_fn, params)>>
+   Worker ->> MainControl : mltrain_fn(params)
+   activate Worker
+   activate MainControl
+   MainControl -> Storage : load(train)
+   activate Storage
+   Storage --> MainControl : train_data
+   deactivate Storage
+   create TFIDF
+   MainControl -> TFIDF : <<TFIDF(train_review)>>
+   opt remove_zero_tfidf
+      MainControl -> TFIDF : remove_zero_tfidf(weights, threshold)
+      activate TFIDF
+      TFIDF --> MainControl : filtered_weights
+      deactivate TFIDF
+   end
+   create C45
+   MainControl -> C45 : <<C45(tfidf, train)>>
+   MainControl -> C45 : train()
+   activate C45
+   C45 -> C45 : calculate_total_entropy()
+   activate C45
+   deactivate C45
+   C45 -> C45 : attach_node()
+   activate C45
+   C45 -> C45 : pruning(excludedRows)
+   activate C45
+   loop attr in attributes
+      C45 -> C45 : get_possible_threshold(attr, excludedRows)
+      activate C45
+      C45 --> C45 : thresholds
+      deactivate C45
+      opt len(thresholds) > 0
+         loop threshold in thresholds
+            C45 -> C45 : calculate_attribute_gain(attr, threshold, excludedRows)
+            activate C45
+            C45 -> C45 : get_child_nodes(attribute, threshold, excludedRows)
+            activate C45
+            C45 --> C45 : child_nodes
+            deactivate C45
+            C45 -> C45 : calculate_entropy(left_node)
+            activate C45
+            C45 --> C45 : entropy
+            deactivate C45
+            C45 -> C45 : calculate_entropy(right_node)
+            activate C45
+            C45 --> C45 : entropy
+            deactivate C45
+            C45 --> C45 : gain
+            deactivate C45
+         end
+      end
+   end
+   C45 --> C45 : attrThresholds
+   deactivate C45
+   opt len(attrThresholds) > 0
+      create entity Node
+      C45 -> Node : <<Node(attr, threshold, type)>>
+      C45 -> C45 : get_child_nodes(attr, threshold, excludedRows)
+      activate C45
+      C45 --> C45 : child_nodes
+      deactivate C45
+      opt parentNode is not empty
+         alt direction == "left"
+            C45 -> Node : set_left_child(Node)
+            activate Node
+         else direction == "right"
+            C45 -> Node : set_right_child(Node)
+         end
+         deactivate Node
+      end
+      alt labelCount == 1
+         C45 -> Node : set_type("leaf")
+         activate Node
+         deactivate Node
+         C45 -> Node : set_label(label)
+         activate Node
+         deactivate Node
+      else labelCount == 2
+         opt len(leftLabel) == 1
+            create entity Node
+            C45 -> Node : <<Node("Label", threshold, "Leaf")>>
+            C45 -> Node : set_label(label)
+            activate Node
+            deactivate Node
+            C45 -> Node : set_left_child(Node)
+            activate Node
+            deactivate Node
+         end
+         opt len(rightLabel) == 1
+            create entity Node
+            C45 -> Node : <<Node("Label", threshold, "Leaf")>>
+            C45 -> Node : set_label(label)
+            activate Node
+            deactivate Node
+            C45 -> Node : set_right_child(Node)
+            activate Node
+            deactivate Node
+         end
+      else
+         opt rightDataCount > 0
+            alt rightDataCount > 0
+               C45 -> Node : <<Node("Label", threshold, "Leaf")>>
+               C45 -> Node : set_label(label)
+               activate Node
+               deactivate Node
+               C45 -> Node : set_right_child(Node)
+               activate Node
+               deactivate Node
+            else
+               C45 -> C45 : attach_node(leftExclusion, Node, "right")
+               activate C45
+               deactivate C45
+            end
+         end
+         opt leftDataCount > 0
+            alt leftDataCount > 0
+               C45 -> Node : <<Node("Label", threshold, "Leaf")>>
+               C45 -> Node : set_label(label)
+               activate Node
+               deactivate Node
+               C45 -> Node : set_left_child(Node)
+               activate Node
+               deactivate Node
+            else
+               C45 -> C45 : attach_node(rightExclusion, Node, "left")
+               activate C45
+               deactivate C45
+            end
+         end
+      end
+   end
+   deactivate C45
+   deactivate C45
+   MainControl --> Worker : result
+   deactivate MainControl
+   Worker ->> MainControl : mltrain_result(result)
+   activate MainControl
+   MainControl -> Storage : save(result, filename)
+   activate Storage
+   deactivate Storage
+   deactivate MainControl
+end
+MainControl --> AppWindow : attrs
+deactivate MainControl
+deactivate AppWindow
+AppWindow -> AppWindow : test_model()
+activate AppWindow
+AppWindow -> MainControl : test_model()
+activate MainControl
+loop i < k
+   MainControl -> Storage : load(test_i)
+   activate Storage
+   Storage --> MainControl : test_data
+   deactivate Storage
+   MainControl -> C45 : score(tfidf, test_data)
+   activate C45
+   C45 -> C45 : predict(tfidf, review)
+   activate C45
+   C45 -> TFIDF : test_tfidf(review)
+   activate TFIDF
+   TFIDF --> C45 : tfidf
+   deactivate TFIDF
+   C45 --> C45 : predicted_labels
+   deactivate C45
+   C45 --> MainControl : score
+   deactivate C45
+end
+MainControl --> AppWindow : scores
+deactivate MainControl
+deactivate AppWindow
+@enduml

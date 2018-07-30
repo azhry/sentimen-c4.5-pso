@@ -30,11 +30,5 @@ start
 :Melakukan proses pelatihan algoritma C4.5;
 :Melakukan proses pengujian algoritma C4.5;
 :Menampilkan hasil akurasi pengujian algoritma C4.5;
-| Peneliti |
-:Memasukkan parameter PSO;
-:Menekan tombol Optimize C4.5;
-| Sistem |
-:Melakukan optimasi C4.5 dengan PSO;
-:Menampilkan hasil optimasi PSO;
 stop
 @enduml

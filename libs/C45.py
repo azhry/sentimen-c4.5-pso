@@ -98,8 +98,8 @@ class C45:
 			rightData = self.npdata[right]
 
 			# count label occurence for each child
-			leftLabel, leftCount = np.unique(leftData[:, -2], return_counts = True)
-			rightLabel, rightCount = np.unique(rightData[:, -2], return_counts = True)
+			leftLabel, leftCount = np.unique(leftData[:, -1], return_counts = True)
+			rightLabel, rightCount = np.unique(rightData[:, -1], return_counts = True)
 
 			leftDataCount = len(left)
 			rightDataCount = len(right)
@@ -119,21 +119,25 @@ class C45:
 			if labelCount == 1:
 				newNode.set_type("leaf")
 				newNode.set_label(labels[0])
+				print(f"Leaf attached: {labels[0]}")
 			elif labelCount == 2:
 				if len(leftLabel) == 1:
 					leftLeafNode = Node("Label", threshold, "leaf")
 					leftLeafNode.set_label(leftLabel[0])
 					newNode.set_left_child(leftLeafNode)
+					print(f"Leaf attached: {leftLabel[0]}")
 				if len(rightLabel) == 1:
 					rightLeafNode = Node("Label", threshold, "leaf")
 					rightLeafNode.set_label(rightLabel[0])
 					newNode.set_right_child(rightLeafNode)
+					print(f"Leaf attached: {rightLabel[0]}")
 			else:
 				if rightDataCount > 0:
 					if rightDataCount == 1:
 						rightLeafNode = Node("Label", threshold, "leaf")
 						rightLeafNode.set_label(rightLabel[0])
 						newNode.set_right_child(rightLeafNode)
+						print(f"Leaf attached: {rightLabel[0]}")
 					else:
 						self.attach_node(leftExclusion, newNode, "right")
 				if leftDataCount > 0:
@@ -141,6 +145,7 @@ class C45:
 						leftLeafNode = Node("Label", threshold, "leaf")
 						leftLeafNode.set_label(leftLabel[0])
 						newNode.set_left_child(leftLeafNode)
+						print(f"Leaf attached: {leftLabel[0]}")
 					else:
 						self.attach_node(rightExclusion, newNode, "left")
 
@@ -193,6 +198,7 @@ class C45:
 
 	def score(self, tfidf, data):
 		predicted = self.predict(tfidf, data["Review"])
+		print(predicted)
 		actual = np.array(data["Label"])
 		at, cm = np.unique(predicted == actual, return_counts=True)
 		return (0 if True not in at else (cm[0] if len(at) == 1 else cm[1])) / np.sum(cm)

@@ -9,7 +9,7 @@ rectangle Sistem {
 	peneliti -- ( Klasifikasi dengan C4.5 )
     ( Klasifikasi dengan C4.5 ) ..> ( Memuat Data ) : include
     ( Klasifikasi dengan C4.5 ) ..> ( Praproses Data ) : include
-    ( Klasifikasi dengan C4.5 ) <.. ( Melatih C4.5 ) : extend
+    ( Klasifikasi dengan C4.5 ) <.. ( Melihat Data ) : extend
     ( Klasifikasi dengan C4.5 ) <.. ( Optimasi C4.5 dengan PSO ) : extend
 }
 @enduml

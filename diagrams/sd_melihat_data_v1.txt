@@ -1,0 +1,29 @@
+@startuml
+hide footbox
+title Melihat Data\n
+
+actor Peneliti
+boundary AppWindow
+control MainControl
+Entity Storage
+
+activate Peneliti
+Peneliti -> AppWindow : view_data(kth, dstype)
+activate AppWindow
+AppWindow -> MainControl : get_data(kth, dstype)
+activate MainControl
+MainControl -> Storage : load(path)
+activate Storage
+alt dstype == "Training Data"
+   Storage --> MainControl : k_training_data
+   MainControl --> AppWindow : k_training_data
+   AppWindow --> Peneliti : k_training_data
+else
+   Storage --> MainControl : k_test_data
+   deactivate Storage
+   MainControl --> AppWindow : k_test_data
+   deactivate MainControl
+   AppWindow --> Peneliti : k_test_data
+   deactivate AppWindow
+end
+@enduml

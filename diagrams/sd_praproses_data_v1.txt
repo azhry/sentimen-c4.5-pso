@@ -1,0 +1,50 @@
+@startuml
+hide footbox
+title Praproses Data\n
+
+actor Peneliti
+boundary AppWindow
+control MainControl
+control Preprocessor
+entity Storage
+
+activate Peneliti
+Peneliti -> AppWindow : preprocess_data()
+activate AppWindow
+opt data is not empty
+   AppWindow -> MainControl : preprocess_data(ui, data)
+   activate MainControl
+   loop for review, label in data
+      MainControl -> Preprocessor : preprocess(review)
+      activate Preprocessor
+      Preprocessor -> Preprocessor : stemming(review)
+      activate Preprocessor
+      Preprocessor --> Preprocessor : stemmed_review
+      deactivate Preprocessor
+      Preprocessor -> Preprocessor : tokenizing(stemmed_review)
+      activate Preprocessor
+      Preprocessor --> Preprocessor : tokens
+      deactivate Preprocessor
+      loop for token in tokens
+          opt token in stopwords
+             Preprocessor -> Preprocessor : remove(token)
+             activate Preprocessor
+             deactivate Preprocessor
+          end
+      end
+      Preprocessor --> MainControl : preprocessed_reviews
+      deactivate Preprocessor
+   end
+   MainControl --> AppWindow : preprocessed_reviews
+   deactivate MainControl
+   AppWindow -> AppWindow : save_data(preprocessed_reviews)
+   activate AppWindow
+   AppWindow -> MainControl : save_data(preprocessed_reviews)
+   activate MainControl
+   MainControl -> Storage : save(preprocessed_reviews, filename)
+   activate Storage
+   deactivate Storage
+   deactivate MainControl
+   deactivate AppWindow
+end
+@enduml

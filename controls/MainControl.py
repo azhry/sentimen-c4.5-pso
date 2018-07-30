@@ -35,7 +35,7 @@ class MainControl():
 		self.k = 0
 		self.storage = Storage()
 
-	def importExcel(self, UI):
+	def import_excel(self, UI):
 		return self.openFileDialog(UI)
 
 	def openFileDialog(self, UI):
@@ -157,9 +157,9 @@ class MainControl():
 			results.append((self.clfs[i].foldNumber, self.clfs[i].optimize(popSize, numIteration, c1, c2, target)))
 		return results
 
-	def get_data(self, k, dstype):
+	def get_data(self, kth, dstype):
 		t = "train" if dstype == "Training Data" else "test"
-		return self.storage.load(f"data/folds/{t}{k}.pckl")
+		return self.storage.load(f"data/folds/{t}{kth}.pckl")
 
 	def resetDatabase(self):
 		self.db.reset()

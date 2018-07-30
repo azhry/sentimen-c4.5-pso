@@ -1,0 +1,35 @@
+@startuml
+hide footbox
+title Memuat Data\n
+
+actor Peneliti
+boundary AppWindow
+control MainControl
+control DataImporter
+
+activate Peneliti
+Peneliti -> AppWindow : import_excel()
+activate AppWindow
+AppWindow -> MainControl : import_excel()
+activate MainControl
+MainControl -> MainControl : openFileDialog()
+activate MainControl
+alt "file exist?"
+    create DataImporter
+    MainControl -> DataImporter: << DataImporter(filename) >>
+    MainControl -> DataImporter : get_data()
+    activate DataImporter
+    DataImporter --> MainControl : DataFrame
+    deactivate DataImporter
+    MainControl --> AppWindow : DataFrame
+else
+    MainControl --> AppWindow : None
+    deactivate MainControl
+    deactivate MainControl
+end
+opt "is data not empty?"
+    AppWindow -> AppWindow : renderTable(data)
+    activate AppWindow
+    deactivate AppWindow
+end
+@enduml

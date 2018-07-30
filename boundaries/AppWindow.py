@@ -97,13 +97,6 @@ class AppWindow(QMainWindow):
 		self.viewDataGroupBox.setLayout(viewDataLayout)
 		# View data layout (END)
 
-		self.positiveLabelCount = QLabel("Positive: -", self.ETLTabs)
-		self.positiveLabelCount.move(10, 390)
-		self.negativeLabelCount = QLabel("Negative: -", self.ETLTabs)
-		self.negativeLabelCount.move(150, 390)
-		self.neutralLabelCount = QLabel("Neutral: -", self.ETLTabs)
-		self.neutralLabelCount.move(290, 390)
-
 	def renderTestingTab(self):
 		self.testC45GroupBox = QGroupBox("Train and Test C4.5", self.testTabs)
 		testC45Layout = QFormLayout()
@@ -144,7 +137,7 @@ class AppWindow(QMainWindow):
 		menuBar = self.menuBar()
 		self.fileMenu = menuBar.addMenu("File")
 		self.importExcelMenu = QAction("Import Excel", self)
-		self.importExcelMenu.triggered.connect(self.importExcel)
+		self.importExcelMenu.triggered.connect(self.import_excel)
 		self.fileMenu.addAction(self.importExcelMenu)
 		self.loadDataMenu = QAction("Load Data", self)
 		self.loadDataMenu.triggered.connect(self.load_data)
@@ -199,18 +192,18 @@ class AppWindow(QMainWindow):
 			self.msg.show()
 
 	def optimize_model(self, popSize, numIteration, c1, c2):
-		# try:
-		results = self.mainControl.optimize_model(popSize, numIteration, c1, c2)
-		for i, result in enumerate(results):
-			self.testingTable.setItem(i, 2, QTableWidgetItem(f"{round(result.best * 100, 2)}%"))
-			self.testingTable.setItem(i, 3, QTableWidgetItem(f"{list(result.position).count(0)}"))
-		# except:
-		# 	self.msg = QMessageBox()
-		# 	self.msg.setIcon(QMessageBox.Warning)
-		# 	self.msg.setWindowTitle("Warning")
-		# 	self.msg.setText("Testing: anda harus memasukkan nilai parameter PSO")
-		# 	self.msg.setStandardButtons(QMessageBox.Ok)
-		# 	self.msg.show()
+		try:
+			results = self.mainControl.optimize_model(popSize, numIteration, c1, c2)
+			for i, result in enumerate(results):
+				self.testingTable.setItem(i, 2, QTableWidgetItem(f"{round(result.best * 100, 2)}%"))
+				self.testingTable.setItem(i, 3, QTableWidgetItem(f"{list(result.position).count(0)}"))
+		except:
+			self.msg = QMessageBox()
+			self.msg.setIcon(QMessageBox.Warning)
+			self.msg.setWindowTitle("Warning")
+			self.msg.setText("Testing: anda harus memasukkan nilai parameter PSO")
+			self.msg.setStandardButtons(QMessageBox.Ok)
+			self.msg.show()
 
 	def view_data(self, kth, dstype):
 		try:
@@ -237,7 +230,6 @@ class AppWindow(QMainWindow):
 			if self.data is None:
 				raise Exception("Anda harus mengimpor data terlebih dahulu")
 			self.data["Review"] = self.mainControl.preprocess_data(self, self.data)
-			self.data["Fold_Number"] = 0
 			self.save_data(self.data)
 		except:
 			self.msg = QMessageBox()
@@ -247,8 +239,8 @@ class AppWindow(QMainWindow):
 			self.msg.setStandardButtons(QMessageBox.Ok)
 			self.msg.show()
 
-	def importExcel(self):
-		self.data = self.mainControl.importExcel(self)
+	def import_excel(self):
+		self.data = self.mainControl.import_excel(self)
 		if self.data is not None:
 			self.renderTable(self.data)
 		self.logOutput.append("Data imported")
