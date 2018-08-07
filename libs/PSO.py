@@ -1,5 +1,5 @@
 from entities.Particle import Particle
-import numpy as np, random
+import random
 
 class PSO:
 
@@ -22,7 +22,7 @@ class PSO:
 				self.particles[i].tent_map()
 
 			self.particles = sorted(self.particles, key=lambda particle: particle.best, reverse=True)
-			self.iterationBest.append(self.particles[0].best)
+			self.iterationBest.append(self.particles[0])
 			print(f"Iteration {_} best: {self.particles[0].best}")
 			if self.particles[0].best > self.target:
 				return self.particles[0]
@@ -30,4 +30,5 @@ class PSO:
 			for i in range(self.populationSize):
 				self.particles[i].update_velocity(self.c1, self.c2, self.particles[0].position)
 				self.particles[i].update_position()
-		return self.particles[0]
+		self.iterationBest = sorted(self.iterationBest, key=lambda particle: particle.best, reverse=True)
+		return self.iterationBest[0]

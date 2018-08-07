@@ -1,8 +1,8 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
-from libs.Worker import Worker
 from controls.MainControl import MainControl
 import datetime, time
+import matplotlib.pyplot as plt
 
 class AppWindow(QMainWindow):
 
@@ -41,7 +41,6 @@ class AppWindow(QMainWindow):
 		self.tabs.move(10, 20)
 
 		self.ETLTabs = QWidget()
-		self.trainTabs = QWidget()
 		self.testTabs = QWidget()
 		
 		self.tabs.addTab(self.ETLTabs, "Preprocess")
@@ -111,20 +110,21 @@ class AppWindow(QMainWindow):
 		self.attributeSelectionForm.move(440, 100)
 		self.attributeSelectionForm.resize(150, 200)
 		attributeSelectionLayout = QFormLayout()
-		popSizeLabel, iterLabel, targetLabel, c1Label, c2Label = QLabel("Pop size"), QLabel("Iteration"), QLabel("Target(%)"), QLabel("C1"), QLabel("C2")
+		popSizeLabel, iterLabel, targetLabel, c1Label, c2Label = QLabel("Pop size"), QLabel("Iteration"), QLabel("Target(+%)"), QLabel("C1"), QLabel("C2")
 		c1Label.setToolTip("Penjelasan nilai convergence 1")
 		c2Label.setToolTip("Penjelasan nilai convergence 2")
 		popSizeTextBox, numIterationTextBox, targetTextBox, c1ValueTextBox, c2ValueTextBox = [QLineEdit() for _ in range(5)]
 		c1ValueTextBox.setText("0.7")
 		c2ValueTextBox.setText("0.5")
+		targetTextBox.setText("0")
 		attributeSelectionLayout.addRow(popSizeLabel, popSizeTextBox)
 		attributeSelectionLayout.addRow(iterLabel, numIterationTextBox)
-		# attributeSelectionLayout.addRow(targetLabel, targetTextBox)
+		attributeSelectionLayout.addRow(targetLabel, targetTextBox)
 		attributeSelectionLayout.addRow(c1Label, c1ValueTextBox)
 		attributeSelectionLayout.addRow(c2Label, c2ValueTextBox)
 		optimizeC45Button = QPushButton("Optimize C4.5")
 
-		optimizeC45Button.clicked.connect(lambda: self.optimize_model(int(popSizeTextBox.text()), int(numIterationTextBox.text()), float(c1ValueTextBox.text()), float(c2ValueTextBox.text())))
+		optimizeC45Button.clicked.connect(lambda: self.optimize_model(int(popSizeTextBox.text()), int(numIterationTextBox.text()), float(c1ValueTextBox.text()), float(c2ValueTextBox.text()), int(targetTextBox.text())))
 		
 		attributeSelectionLayout.addRow(optimizeC45Button)
 		self.attributeSelectionForm.setLayout(attributeSelectionLayout)
@@ -142,8 +142,6 @@ class AppWindow(QMainWindow):
 		self.loadDataMenu = QAction("Load Data", self)
 		self.loadDataMenu.triggered.connect(self.load_data)
 		self.fileMenu.addAction(self.loadDataMenu)
-		self.resetDatabaseMenu = QAction("Reset Data", self)
-		self.fileMenu.addAction(self.resetDatabaseMenu)
 
 	def fold_data(self, k):
 		try:
@@ -178,10 +176,12 @@ class AppWindow(QMainWindow):
 		self.train_model()
 		self.test_model()
 
+		self.optimize_model(40, 20, 0.7, 0.2, 10)
+
 	def test_model(self):
-		scores = self.mainControl.test_model()
-		if scores is not None:
-			for i, score in enumerate(scores):
+		self.scores = self.mainControl.test_model()
+		if self.scores is not None:
+			for i, score in enumerate(self.scores):
 				self.testingTable.setItem(i, 1, QTableWidgetItem(f"{round(score * 100, 2)}%"))
 		else:
 			self.msg = QMessageBox()
@@ -191,10 +191,10 @@ class AppWindow(QMainWindow):
 			self.msg.setStandardButtons(QMessageBox.Ok)
 			self.msg.show()
 
-	def optimize_model(self, popSize, numIteration, c1, c2):
+	def optimize_model(self, popSize, numIteration, c1, c2, target = 0):
 		try:
-			results = self.mainControl.optimize_model(popSize, numIteration, c1, c2)
-			for i, result in enumerate(results):
+			self.results = self.mainControl.optimize_model(popSize, numIteration, c1, c2, target / 100)
+			for i, result in enumerate(self.results):
 				self.testingTable.setItem(i, 2, QTableWidgetItem(f"{round(result.best * 100, 2)}%"))
 				self.testingTable.setItem(i, 3, QTableWidgetItem(f"{list(result.position).count(0)}"))
 		except:

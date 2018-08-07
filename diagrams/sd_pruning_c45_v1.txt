@@ -1,0 +1,38 @@
+@startuml
+hide footbox
+title Pruning C4.5\n
+
+control C45
+
+activate C45
+C45 -> C45 : pruning(excludedRows)
+   activate C45
+   loop attr in attributes
+      C45 -> C45 : get_possible_threshold(attr, excludedRows)
+      activate C45
+      C45 --> C45 : thresholds
+      deactivate C45
+      opt len(thresholds) > 0
+         loop threshold in thresholds
+            C45 -> C45 : calculate_attribute_gain(attr, threshold, excludedRows)
+            activate C45
+            C45 -> C45 : get_child_nodes(attribute, threshold, excludedRows)
+            activate C45
+            C45 --> C45 : child_nodes
+            deactivate C45
+            C45 -> C45 : calculate_entropy(left_node)
+            activate C45
+            C45 --> C45 : entropy
+            deactivate C45
+            C45 -> C45 : calculate_entropy(right_node)
+            activate C45
+            C45 --> C45 : entropy
+            deactivate C45
+            C45 --> C45 : gain
+            deactivate C45
+         end
+      end
+   end
+   C45 --> C45 : attrThresholds
+   deactivate C45
+@enduml

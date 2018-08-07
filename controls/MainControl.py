@@ -1,8 +1,5 @@
-from core.Connection import Connection
 from libs.DataImporter import DataImporter
-# from libs.Preprocessor import Preprocessor
-from pyx.Preprocessor import Preprocessor
-from helpers.Path import relative_path
+from libs.Preprocessor import Preprocessor
 from libs.C45 import C45
 from libs.TFIDF import TFIDF
 from libs.Worker import Worker
@@ -12,26 +9,12 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import QThreadPool, QEventLoop
 from sklearn.model_selection import KFold
 from libs.PSO import PSO
-import sys, time
-import numpy as np, os
+import numpy as np, os, time
 
 class MainControl():
 
 	def __init__(self, UI):
-		self.db = Connection.db
-		if not self.db:
-			UI.msg = QMessageBox()
-			UI.msg.setIcon(QMessageBox.Warning)
-			UI.msg.setWindowTitle("Error")
-			UI.msg.setText("Gagal koneksi ke basisdata")
-			UI.msg.setStandardButtons(QMessageBox.Ok)
-			UI.statusBar().showMessage("Database connection error")
-			if UI.msg.exec_() == QMessageBox.Ok:
-				sys.exit()
-
-		self.stopwordPath = relative_path("id.stopwords.txt")
-		self.correctWordsPath = relative_path("../libs/correct_words.json")
-		self.preprocessor = Preprocessor(self.stopwordPath, self.correctWordsPath)
+		self.preprocessor = Preprocessor()
 		self.k = 0
 		self.storage = Storage()
 
@@ -57,7 +40,6 @@ class MainControl():
 		return None
 
 	def preprocess_data(self, UI, data):
-		self.preprocessedData = []
 		totalTime = 0
 		resultReview = []
 		for i, (review, label) in enumerate(zip(data["Review"], data["Label"])):
@@ -66,7 +48,6 @@ class MainControl():
 			UI.tableWidget.item(i, 0).setBackground(QColor(255, 128, 128))
 			startTime = time.time()	
 			preprocessedReview = " ".join(self.preprocessor.preprocess(review))
-			self.preprocessedData.append({ "review": preprocessedReview, "label" : label })
 			endTime = time.time()
 			resultReview.append(preprocessedReview)
 			UI.logOutput.append(f"Review {i + 1} preprocessed in {round(endTime - startTime, 2)}s")
@@ -138,31 +119,21 @@ class MainControl():
 			scores[i] = self.clfs[i].scores
 		return scores
 
-	def optimize_model(self, popSize, numIteration, c1, c2):
+	def optimize_model(self, popSize, numIteration, c1, c2, target):
 		results = []
 		for i in range(self.k):
 			train, test = self.storage.load(f"data/folds/train{i + 1}.pckl"), self.storage.load(f"data/folds/test{i + 1}.pckl")
 			clf = self.storage.load(f"data/models/tree{i + 1}.pckl")
 			particleSize = len(clf.termsInfo)
-			pso = PSO(particleSize, popSize, numIteration, c1, c2, clf.scores)
+			pso = PSO(particleSize, popSize, numIteration, c1, c2, clf.scores + target)
 			bestParticle = pso.exec(train, test)
 			results.append(bestParticle)
 			self.storage.save(bestParticle, f"data/particles/particle{i + 1}.pckl")
 		return results
 
-
-	def optimizeModel(self, popSize, numIteration, c1, c2, target):
-		results = []
-		for i in range(self.k):
-			results.append((self.clfs[i].foldNumber, self.clfs[i].optimize(popSize, numIteration, c1, c2, target)))
-		return results
-
 	def get_data(self, kth, dstype):
 		t = "train" if dstype == "Training Data" else "test"
 		return self.storage.load(f"data/folds/{t}{kth}.pckl")
-
-	def resetDatabase(self):
-		self.db.reset()
 
 	def load_data(self, path):
 		if os.path.exists(path):

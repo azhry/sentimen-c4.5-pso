@@ -3,7 +3,7 @@ from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFacto
 
 class Preprocessor():
 
-	def __init__(self, stopword_path, correct_words_path):
+	def __init__(self):
 		self.stopwords = StopWordRemoverFactory().get_stop_words()
 		self.stemmer = StemmerFactory().create_stemmer()
 

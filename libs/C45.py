@@ -1,7 +1,6 @@
 from math import log
 from collections import Counter
 from entities.Node import Node
-from sklearn.feature_selection import mutual_info_classif
 import numpy as np, sys
 
 class C45:
@@ -36,7 +35,7 @@ class C45:
 		return self.totalEntropy - info
 
 	def calculate_entropy(self, data):
-		labelCount = Counter(data[:, -2])
+		labelCount = Counter(data[:, -1])
 		labelValue = list(labelCount.values())
 		labelTotal = sum(labelValue)
 		entropy = sum(-1 * ((x / labelTotal) * (np.log10(x / labelTotal) if (x / labelTotal) != 0 else 0)) for x in labelValue) if labelTotal != 0 else 0
