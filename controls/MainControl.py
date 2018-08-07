@@ -116,6 +116,7 @@ class MainControl():
 		for i in range(self.k):
 			test = self.storage.load(f"data/folds/test{i + 1}.pckl")
 			self.clfs[i].scores = self.clfs[i].score(self.tfidfs[i], test)
+			self.storage.save(self.clfs[i], f"data/models/tree{i + 1}.pckl")
 			scores[i] = self.clfs[i].scores
 		return scores
 

@@ -197,7 +197,6 @@ class C45:
 
 	def score(self, tfidf, data):
 		predicted = self.predict(tfidf, data["Review"])
-		print(predicted)
 		actual = np.array(data["Label"])
 		at, cm = np.unique(predicted == actual, return_counts=True)
 		return (0 if True not in at else (cm[0] if len(at) == 1 else cm[1])) / np.sum(cm)

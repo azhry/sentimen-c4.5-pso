@@ -18,11 +18,12 @@ class PSO:
 			for i in range(self.populationSize):
 				print(self.particles[i].position)
 				b = self.particles[i].calculate_best(train, test)
-				print(f"Particle best: {b}")
+				print(f"Iter-{_} Particle-{i} best: {b}")
 				self.particles[i].tent_map()
 
 			self.particles = sorted(self.particles, key=lambda particle: particle.best, reverse=True)
 			self.iterationBest.append(self.particles[0])
+			print(f"Target: {self.target}")
 			print(f"Iteration {_} best: {self.particles[0].best}")
 			if self.particles[0].best > self.target:
 				return self.particles[0]

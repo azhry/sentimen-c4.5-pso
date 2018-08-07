@@ -176,7 +176,7 @@ class AppWindow(QMainWindow):
 		self.train_model()
 		self.test_model()
 
-		self.optimize_model(40, 20, 0.7, 0.2, 10)
+		self.optimize_model(20, 40, 0.7, 0.2, 10)
 
 	def test_model(self):
 		self.scores = self.mainControl.test_model()
