@@ -163,13 +163,13 @@ class C45:
 				if weight <= currNode.threshold:
 					if currNode.left is None:
 						if currNode.right is not None:
-							self.traverse(row, vectors, tfidf, currNode.right)
+							return self.traverse(row, vectors, tfidf, currNode.right)
 						return False
 					return self.traverse(row, vectors, tfidf, currNode.left)
 				else:
 					if currNode.right is None:
 						if currNode.left is not None:
-							self.traverse(row, vectors, tfidf, currNode.left)
+							return self.traverse(row, vectors, tfidf, currNode.left)
 						return False
 					return self.traverse(row, vectors, tfidf, currNode.right)
 

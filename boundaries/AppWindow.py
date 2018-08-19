@@ -173,10 +173,12 @@ class AppWindow(QMainWindow):
 				self.testingTable.setItem(i, 0, QTableWidgetItem(f"{len(attr)}"))
 
 	def train_and_test(self):
+		self.preprocess_data()
+		self.fold_data(10)
 		self.train_model()
 		self.test_model()
 
-		self.optimize_model(20, 40, 0.7, 0.2, 10)
+		# self.optimize_model(20, 40, 0.7, 0.2, 10)
 
 	def test_model(self):
 		self.scores = self.mainControl.test_model()

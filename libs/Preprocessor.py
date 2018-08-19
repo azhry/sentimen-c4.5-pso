@@ -1,14 +1,17 @@
 from Sastrawi.Stemmer.StemmerFactory import StemmerFactory
 from Sastrawi.StopWordRemover.StopWordRemoverFactory import StopWordRemoverFactory
 
-class Preprocessor():
+class Preprocessor:
 
 	def __init__(self):
 		self.stopwords = StopWordRemoverFactory().get_stop_words()
 		self.stemmer = StemmerFactory().create_stemmer()
 
+	def clean(self, words):
+		return words.translate(str.maketrans("", "", ".,!?\"'#@%&/()"))
+
 	def stemming(self, words):
-		return self.stemmer.stem(words)
+		return self.stemmer.stem(self.clean(words))
 
 	def tokenizing(self, str, delimiter = " "):
 		return str.split(delimiter)
