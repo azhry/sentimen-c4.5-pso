@@ -8,7 +8,7 @@ class Preprocessor:
 		self.stemmer = StemmerFactory().create_stemmer()
 
 	def clean(self, words):
-		return words.translate(str.maketrans("", "", ".,!?\"'#@%&/()"))
+		return words.translate(str.maketrans("", "", ".,!?\"'#@%&/();:"))
 
 	def stemming(self, words):
 		return self.stemmer.stem(self.clean(words))
