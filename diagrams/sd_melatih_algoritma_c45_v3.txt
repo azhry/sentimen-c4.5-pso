@@ -1,0 +1,77 @@
+@startuml
+hide footbox
+title Melatih Algoritma C4.5\n
+
+control MainControl
+control C45
+
+activate MainControl
+MainControl -> C45 : train()
+   activate C45
+   C45 -> C45 : calculate_total_entropy()
+   activate C45
+   deactivate C45
+   C45 -> C45 : attach_node()
+   activate C45
+   ref over C45 : Pruning C4.5
+   opt len(attrThresholds) > 0
+      create entity Node
+      C45 -> Node : <<Node(attr, threshold, type)>>
+      C45 -> C45 : get_child_nodes(attr, threshold, excludedRows)
+      activate C45
+      C45 --> C45 : child_nodes
+      deactivate C45
+      opt parentNode is not empty
+         alt direction == "left"
+            C45 -> Node : set_left_child(Node)
+            activate Node
+         else direction == "right"
+            C45 -> Node : set_right_child(Node)
+         end
+         deactivate Node
+      end
+      alt labelCount == 1
+         C45 -> Node : set_type("leaf")
+         activate Node
+         deactivate Node
+         C45 -> Node : set_label(label)
+         activate Node
+         deactivate Node
+      else
+         opt rightDataCount > 0
+            alt rightDataCount > 0
+               create entity Node.
+               C45 -> Node. : <<Node("Label", threshold, "Leaf")>>
+               C45 -> Node. : set_label(label)
+               activate Node.
+               deactivate Node.
+               C45 -> Node. : set_right_child(Node)
+               activate Node.
+               deactivate Node.
+            else
+               C45 -> C45 : attach_node(leftExclusion, Node, "right")
+               activate C45
+               deactivate C45
+            end
+         end
+         opt leftDataCount > 0
+            alt leftDataCount > 0
+               create entity .Node.
+               C45 -> .Node. : <<Node("Label", threshold, "Leaf")>>
+               C45 -> .Node. : set_label(label)
+               activate .Node.
+               deactivate .Node.
+               C45 -> .Node. : set_left_child(Node)
+               activate .Node.
+               deactivate .Node.
+            else
+               C45 -> C45 : attach_node(rightExclusion, Node, "left")
+               activate C45
+               deactivate C45
+            end
+         end
+      end
+   end
+   deactivate C45
+   deactivate C45
+@enduml

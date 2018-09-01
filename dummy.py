@@ -73,6 +73,7 @@
 
 import numpy as np, matplotlib.pyplot as plt
 
+# c45_scores = np.array([51.58, 56.38, 56.38, 50.00, 55.32, 53.19, 57.45, 51.06, 56.38, 57.45])
 c45_scores = np.array([54.74, 53.19, 56.38, 50.00, 57.45, 57.45, 55.32, 52.13, 55.32, 60.64])
 # c45_scores = np.array([49.47, 56.38, 55.32, 48.94, 58.51, 55.32, 58.51, 46.81, 53.19, 62.77])
 # c45_scores = np.array([44.79, 57.29, 57.29, 50.00, 56.84, 57.89, 54.74, 51.58, 56.84, 50.53])
@@ -80,14 +81,17 @@ c45_scores = np.array([54.74, 53.19, 56.38, 50.00, 57.45, 57.45, 55.32, 52.13, 5
 # c45_scores = np.array([53.54, 57.58, 60.61, 46.94, 50.00, 46.94, 52.04, 41.84, 57.14, 55.10])
 # c45_scores = np.array([51.52, 53.54, 51.52, 47.47, 49.49, 51.52, 42.42, 44.44, 53.06, 51.02])
 # c45_scores = np.array([47.92, 54.14, 52.63, 42.11, 42.11, 47.37, 44.21, 43.16, 47.37, 47.37])
-pso_c45_scores_1 = np.array([60.00, 55.32, 55.32, 54.26, 58.21, 62.77, 55.32, 48.94, 56.38, 60.64])
+pso_c45_scores_1 = np.array([61.05, 55.32, 55.32, 53.19, 57.45, 59.57, 56.38, 50.00, 52.13, 61.70])
 # pso_c45_scores_1 = np.array([51.04, 55.21, 53.68, 47.37, 45.26, 51.58, 47.37, 43.16, 50.53, 48.42])
+pso_c45_scores_2 = np.array([60.00, 55.32, 55.32, 54.26, 58.21, 62.77, 55.32, 48.94, 56.38, 60.64])
+# pso_c45_scores_2 = np.array([55.79, 57.45, 56.38, 52.13, 58.51, 57.45, 59.57, 48.94, 57.45, 56.38])
 # pso_c45_scores_2 = np.array([50.00, 55.21, 53.68, 44.21, 45.26, 49.47, 47.37, 43.16, 52.63, 46.32])
+pso_c45_scores_3 = np.array([55.79, 55.32, 55.32, 52.13, 59.57, 62.77, 56.38, 52.13, 56.38, 61.70])
 # pso_c45_scores_3 = np.array([50.00, 56.25, 54.74, 46.32, 45.26, 49.47, 47.37, 44.21, 52.63, 47.37])
 print(np.mean(c45_scores))
 print(pso_c45_scores_1 - c45_scores, np.mean(pso_c45_scores_1))
-# print(pso_c45_scores_2 - c45_scores, np.mean(pso_c45_scores_2))
-# print(pso_c45_scores_3 - c45_scores, np.mean(pso_c45_scores_3))
+print(pso_c45_scores_2 - c45_scores, np.mean(pso_c45_scores_2))
+print(pso_c45_scores_3 - c45_scores, np.mean(pso_c45_scores_3))
 # result_mean_1 = np.mean(pso_c45_scores_1 - c45_scores)
 # result_mean_2 = np.mean(pso_c45_scores_2 - c45_scores)
 # result_mean_3 = np.mean(pso_c45_scores_3 - c45_scores)
@@ -115,5 +119,5 @@ print(pso_c45_scores_1 - c45_scores, np.mean(pso_c45_scores_1))
 
 # s = Storage()
 # for i in range(10):
-# 	clf = s.load(f"data/models/tree{i + 1}.pckl")
-# 	print(round(clf.scores * 100, 2))
+# 	clf = s.load(f"data/particles/particle{i + 1}.pckl")
+# 	print(round(clf.best * 100, 2))
