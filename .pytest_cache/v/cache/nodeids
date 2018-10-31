@@ -1,11 +1,7 @@
 [
-  "tests/UC-1_test.py::test_importCorrectExcelFile",
-  "tests/UC-1_test.py::test_importExcelWithoutData",
-  "tests/UC-1_test.py::test_importExcelWithoutLabelColumn",
-  "tests/UC-1_test.py::test_importExcelWithoutReviewColumn",
-  "tests/UC-1_test.py::test_importExcelWithNeitherColumn",
-  "tests/UC-1_test.py::test_importExceptExcelFile",
-  "tests/UC-1_test.py::test_preprocessData",
-  "tests/UC-1_test.py::test_preprocessInapproriateData",
-  "tests/UC-1_test.py::test_saveData"
+  "tests/UC-2_test.py::test_importCorrectExcelFile",
+  "tests/UC-2_test.py::test_importExcelWithoutLabelColumn",
+  "tests/UC-2_test.py::test_importExceptExcelFile",
+  "tests/UC-3_test.py::test_preprocessData",
+  "tests/UC-3_test.py::test_preprocessInapproriateData"
 ]

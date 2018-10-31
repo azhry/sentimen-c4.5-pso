@@ -1,1 +1,5 @@
-{}
+{
+  "tests/UC-1_test.py::test_preprocessData": true,
+  "tests/UC-1_test.py::test_preprocessInapproriateData": true,
+  "tests/UC-1_test.py::test_saveData": true
+}

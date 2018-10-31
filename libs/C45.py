@@ -199,4 +199,11 @@ class C45:
 		predicted = self.predict(tfidf, data["Review"])
 		actual = np.array(data["Label"])
 		at, cm = np.unique(predicted == actual, return_counts=True)
-		return (0 if True not in at else (cm[0] if len(at) == 1 else cm[1])) / np.sum(cm)
+		self.set_score((0 if True not in at else (cm[0] if len(at) == 1 else cm[1])) / np.sum(cm))
+		return self.get_score()
+
+	def get_score(self):
+		return self.scores
+
+	def set_score(self, score):
+		self.scores = score

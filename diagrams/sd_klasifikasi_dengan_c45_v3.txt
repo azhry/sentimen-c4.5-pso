@@ -1,0 +1,115 @@
+@startuml
+hide footbox
+title Klasifikasi dengan C4.5\n
+
+actor Peneliti
+boundary AppWindow
+control MainControl
+control DataImporter
+control Preprocessor
+control Worker
+control TFIDF
+control C45
+entity Storage
+entity Node
+
+activate Peneliti
+ref over Peneliti, AppWindow, MainControl, DataImporter : Memuat Data
+ref over Peneliti, AppWindow, MainControl, Preprocessor, Storage : Praproses Data
+
+Peneliti -> AppWindow : fold_data(k)
+activate AppWindow
+AppWindow -> MainControl : fold_data(k, UI)
+activate MainControl
+MainControl -> Storage : load(filename)
+activate Storage
+Storage --> MainControl : preprocessed_data
+deactivate Storage
+loop train, test in split(preprocessed_data)
+   MainControl -> Storage : save(train, filename)
+   activate Storage
+   deactivate Storage
+   MainControl -> Storage : save(test, filename)
+   activate Storage
+   deactivate Storage
+end
+deactivate MainControl
+deactivate AppWindow
+Peneliti -> AppWindow : train_and_test()
+activate AppWindow
+AppWindow -> AppWindow : train_model()
+activate AppWindow
+AppWindow -> MainControl : train_model(UI)
+activate MainControl
+loop i < k
+   create Worker
+   MainControl -> Worker : <<Worker(mltrain_fn, params)>>
+   Worker ->> MainControl : mltrain_fn(params)
+   activate MainControl
+   MainControl -> Storage : load(train)
+   activate Storage
+   Storage --> MainControl : train_data
+   deactivate Storage
+   create TFIDF
+   MainControl -> TFIDF : <<TFIDF(train_review)>>
+   opt remove_zero_tfidf
+      MainControl -> TFIDF : remove_zero_tfidf(weights, threshold)
+      activate TFIDF
+      TFIDF --> MainControl : filtered_weights
+      deactivate TFIDF
+   end
+   create C45
+   MainControl -> C45 : <<C45(tfidf, train)>>
+   ref over MainControl, C45, Node : Melatih Algoritma C4.5
+   MainControl --> Worker : result
+   deactivate Worker
+   deactivate MainControl
+   Worker ->> MainControl : mltrain_result(result)
+   activate MainControl
+   MainControl -> Storage : save(result, filename)
+   activate Storage
+   deactivate Storage
+   deactivate MainControl
+end
+MainControl --> AppWindow : attrs
+deactivate MainControl
+deactivate AppWindow
+AppWindow -> AppWindow : test_model()
+activate AppWindow
+AppWindow -> MainControl : test_model()
+activate MainControl
+loop i < k
+   MainControl -> Storage : load(test_i)
+   activate Storage
+   Storage --> MainControl : test_data
+   deactivate Storage
+   MainControl -> C45 : score(tfidf, test_data)
+   activate C45
+   C45 -> C45 : predict(tfidf, review)
+   activate C45
+   C45 -> TFIDF : test_tfidf(review)
+   activate TFIDF
+   TFIDF --> C45 : tfidf
+   deactivate TFIDF
+   C45 --> C45 : predicted_labels
+   deactivate C45
+   C45 -> C45 : set_score(score)
+   activate C45
+   deactivate C45
+   C45 -> C45 : get_score()
+   activate C45
+   C45 --> C45 : score
+   deactivate C45
+   C45 --> MainControl : score
+   deactivate C45
+   MainControl -> C45 : set_score(score)
+   activate C45
+   deactivate C45
+   MainControl -> Storage : save(clf, filename)
+   activate Storage
+   deactivate Storage
+end
+MainControl --> AppWindow : scores
+deactivate MainControl
+deactivate AppWindow
+@enduml

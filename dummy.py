@@ -6,7 +6,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 s = Storage()
-data = s.load("data/preprocessed/preprocessed.pckl")
+data = s.load("../pckl2/preprocessed/preprocessed.pckl")
 tfidf = TFIDF(data["Review"])
 # english_labels = {
 # 	"Berdampak positif": "Positive Review",

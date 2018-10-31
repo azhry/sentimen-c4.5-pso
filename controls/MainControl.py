@@ -17,6 +17,7 @@ class MainControl():
 		self.preprocessor = Preprocessor()
 		self.k = 0
 		self.storage = Storage()
+		self.threadpool = QThreadPool()
 
 	def import_excel(self, UI):
 		return self.openFileDialog(UI)
@@ -65,7 +66,6 @@ class MainControl():
 
 	def fold_data(self, k, UI = None):
 		self.k = k
-		self.threadpool = QThreadPool()
 		self.threadpool.setMaxThreadCount(self.k)
 		self.data = self.storage.load("data/preprocessed/preprocessed.pckl")
 		kf = KFold(n_splits=self.k, shuffle=True, random_state=2)
@@ -79,7 +79,7 @@ class MainControl():
 		train = self.storage.load(f"data/folds/train{params['i'] + 1}.pckl")
 		tfidf = TFIDF(train["Review"])
 		if params['remove_zero_tfidf']:
-			tfidf.weights = tfidf.remove_zero_tfidf(tfidf.weights, 0.5)
+			tfidf.weights = tfidf.remove_zero_tfidf(tfidf.weights, 0.4)
 		clf = C45(tfidf, train)
 		clf.train()
 		return params["i"], clf, tfidf, params['UI'] or None
@@ -94,6 +94,16 @@ class MainControl():
 
 
 	def train_model(self, UI = None):
+		if self.k <= 0 and UI is not None:
+			UI.msg = QMessageBox()
+			UI.msg.setIcon(QMessageBox.Warning)
+			UI.msg.setWindowTitle("Warning")
+			UI.msg.setText("Anda harus membagi data menggunakan k-fold terlebih dahulu")
+			UI.msg.setStandardButtons(QMessageBox.Ok)
+			UI.msg.show()
+			UI.statusBar().showMessage("Train and test failed")
+			return False
+
 		self.attrs, self.clfs, self.tfidfs = ([0 for i in range(self.k)], [0 for i in range(self.k)], [0 for i in range(self.k)])
 		el = QEventLoop()
 		for i in range(self.k):
@@ -115,9 +125,12 @@ class MainControl():
 		scores = [0 for i in range(self.k)]
 		for i in range(self.k):
 			test = self.storage.load(f"data/folds/test{i + 1}.pckl")
-			self.clfs[i].scores = self.clfs[i].score(self.tfidfs[i], test)
+			score = self.clfs[i].score(self.tfidfs[i], test)
+			self.clfs[i].set_score(score)
+			# self.clfs[i].scores = self.clfs[i].score(self.tfidfs[i], test)
 			self.storage.save(self.clfs[i], f"data/models/tree{i + 1}.pckl")
-			scores[i] = self.clfs[i].scores
+			# scores[i] = self.clfs[i].scores
+			scores[i] = score
 		return scores
 
 	def optimize_model(self, popSize, numIteration, c1, c2, target):
@@ -126,7 +139,7 @@ class MainControl():
 			train, test = self.storage.load(f"data/folds/train{i + 1}.pckl"), self.storage.load(f"data/folds/test{i + 1}.pckl")
 			clf = self.storage.load(f"data/models/tree{i + 1}.pckl")
 			particleSize = len(clf.termsInfo)
-			pso = PSO(particleSize, popSize, numIteration, c1, c2, clf.scores + target)
+			pso = PSO(particleSize, popSize, numIteration, c1, c2, clf.get_score() + target)
 			bestParticle = pso.exec(train, test)
 			results.append(bestParticle)
 			self.storage.save(bestParticle, f"data/particles/particle{i + 1}.pckl")

@@ -114,6 +114,16 @@ class AppWindow(QMainWindow):
 		c1Label.setToolTip("Penjelasan nilai convergence 1")
 		c2Label.setToolTip("Penjelasan nilai convergence 2")
 		popSizeTextBox, numIterationTextBox, targetTextBox, c1ValueTextBox, c2ValueTextBox = [QLineEdit() for _ in range(5)]
+		
+		self.onlyInt = QIntValidator()
+		self.onlyDouble = QDoubleValidator()
+
+		popSizeTextBox.setValidator(self.onlyInt)
+		numIterationTextBox.setValidator(self.onlyInt)
+		targetTextBox.setValidator(self.onlyInt)
+		c1ValueTextBox.setValidator(self.onlyDouble)
+		c2ValueTextBox.setValidator(self.onlyDouble)
+
 		c1ValueTextBox.setText("0.7")
 		c2ValueTextBox.setText("0.5")
 		targetTextBox.setText("0")
@@ -124,7 +134,8 @@ class AppWindow(QMainWindow):
 		attributeSelectionLayout.addRow(c2Label, c2ValueTextBox)
 		optimizeC45Button = QPushButton("Optimize C4.5")
 
-		optimizeC45Button.clicked.connect(lambda: self.optimize_model(int(popSizeTextBox.text()), int(numIterationTextBox.text()), float(c1ValueTextBox.text()), float(c2ValueTextBox.text()), int(targetTextBox.text())))
+		optimizeC45Button.clicked.connect(lambda: self.optimize_model(self.typecast_to_int(popSizeTextBox.text()), self.typecast_to_int(numIterationTextBox.text()), float(c1ValueTextBox.text()), float(c2ValueTextBox.text()), self.typecast_to_int(targetTextBox.text())))
+
 		
 		attributeSelectionLayout.addRow(optimizeC45Button)
 		self.attributeSelectionForm.setLayout(attributeSelectionLayout)
@@ -132,6 +143,10 @@ class AppWindow(QMainWindow):
 		self.testingTable = QTableWidget(self.testTabs)
 		self.testingTable.resize(420, 300)
 		self.testingTable.move(10, 30)
+
+	def typecast_to_int(self, s):
+	    s = s.strip()
+	    return int(s) if s else 0
 
 	def renderMenuBar(self):
 		menuBar = self.menuBar()
@@ -147,10 +162,13 @@ class AppWindow(QMainWindow):
 		try:
 			self.mainControl.fold_data(k, self)
 			self.testingTable.setRowCount(k)
-			self.testingTable.setColumnCount(4)
-			self.testingTable.setHorizontalHeaderLabels(["Attrs", "C4.5", "PSO - C4.5", "Removed Attrs"])
+			self.testingTable.setColumnCount(2)
+			self.testingTable.setHorizontalHeaderLabels(["C4.5", "PSO - C4.5"])
 			tableHeader = self.testingTable.horizontalHeader()
-			tableHeader.setSectionResizeMode(0, QHeaderView.Stretch)
+			# tableHeader.setSectionResizeMode(0, QHeaderView.Stretch)
+			# tableHeader.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+			# tableHeader.setColumnWidth(0, 200)
+			# tableHeader.setColumnWidth(1, 200)
 		except:
 			self.msg = QMessageBox()
 			self.msg.setIcon(QMessageBox.Warning)
@@ -168,23 +186,24 @@ class AppWindow(QMainWindow):
 
 	def train_model(self):
 		attrs = self.mainControl.train_model(self)
-		if attrs is not None:
-			for i, attr in enumerate(attrs):
-				self.testingTable.setItem(i, 0, QTableWidgetItem(f"{len(attr)}"))
+		return attrs
 
 	def train_and_test(self):
 		# self.preprocess_data()
-		self.fold_data(10)
-		self.train_model()
-		self.test_model()
+		# self.fold_data(10)
+		# self.train_model()
+		# self.test_model()
 
-		self.optimize_model(20, 20, 0.7, 0.5, 10)
+		# self.optimize_model(20, 20, 0.7, 0.5, 10)
+		if self.train_model():
+			self.test_model()
 
 	def test_model(self):
 		self.scores = self.mainControl.test_model()
 		if self.scores is not None:
 			for i, score in enumerate(self.scores):
-				self.testingTable.setItem(i, 1, QTableWidgetItem(f"{round(score * 100, 2)}%"))
+				self.testingTable.setItem(i, 0, QTableWidgetItem(f"{round(score * 100, 2)}%"))
+				self.testingTable.setItem(i, 1, QTableWidgetItem(f"-"))
 		else:
 			self.msg = QMessageBox()
 			self.msg.setIcon(QMessageBox.Warning)
@@ -197,8 +216,7 @@ class AppWindow(QMainWindow):
 		try:
 			self.results = self.mainControl.optimize_model(popSize, numIteration, c1, c2, target / 100)
 			for i, result in enumerate(self.results):
-				self.testingTable.setItem(i, 2, QTableWidgetItem(f"{round(result.best * 100, 2)}%"))
-				self.testingTable.setItem(i, 3, QTableWidgetItem(f"{list(result.position).count(0)}"))
+				self.testingTable.setItem(i, 1, QTableWidgetItem(f"{round(result.best * 100, 2)}%"))
 		except:
 			self.msg = QMessageBox()
 			self.msg.setIcon(QMessageBox.Warning)
