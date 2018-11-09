@@ -32,9 +32,9 @@ class Particle:
 		tfidf.weights = tfidf.remove_zero_tfidf(tfidf.weights, 0.5)
 		tfidf.termIndex = {key:val for i, (key, val) in enumerate(tfidf.termIndex.items()) if pos[i] == True}
 		print(f"Selected attributes: {len(tfidf.termIndex)}")
-		clf = C45(tfidf, train)
-		clf.train()
-		self.best = clf.score(tfidf, test)
+		self.clf = C45(tfidf, train)
+		self.clf.train()
+		self.best = self.clf.score(tfidf, test)
 		return self.best
 
 	def tent_map(self):

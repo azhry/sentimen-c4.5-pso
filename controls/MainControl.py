@@ -19,6 +19,10 @@ class MainControl():
 		self.storage = Storage()
 		self.threadpool = QThreadPool()
 
+	def classifyReview(self, review, tree):
+		clf = self.storage.load(f"./data/models/{tree}")
+		return clf.predict(clf.vectors, [review])
+
 	def import_excel(self, UI):
 		return self.openFileDialog(UI)
 

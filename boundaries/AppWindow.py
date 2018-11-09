@@ -2,7 +2,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from controls.MainControl import MainControl
 import datetime, time
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt, os
 
 class AppWindow(QMainWindow):
 
@@ -25,6 +25,7 @@ class AppWindow(QMainWindow):
 
 		self.renderETLTab()
 		self.renderTestingTab()
+		self.renderClassifyTab()
 
 		self.logOutput = QTextEdit(self)
 		self.logOutput.setReadOnly(True)
@@ -42,9 +43,11 @@ class AppWindow(QMainWindow):
 
 		self.ETLTabs = QWidget()
 		self.testTabs = QWidget()
+		self.classifyTab = QWidget()
 		
 		self.tabs.addTab(self.ETLTabs, "Preprocess")
 		self.tabs.addTab(self.testTabs, "Training - Testing")
+		self.tabs.addTab(self.classifyTab, "Classification")
 
 	def renderETLTab(self):
 		self.tableWidget = QTableWidget(self.ETLTabs)
@@ -143,6 +146,29 @@ class AppWindow(QMainWindow):
 		self.testingTable = QTableWidget(self.testTabs)
 		self.testingTable.resize(420, 300)
 		self.testingTable.move(10, 30)
+
+	def renderClassifyTab(self):
+		self.reviewTextEdit = QTextEdit(self.classifyTab)
+		self.reviewTextEdit.setPlaceholderText('Enter review..')
+		self.reviewTextEdit.resize(400, 70)
+		self.reviewTextEdit.move(10, 20)
+
+		self.treeComboBox = QComboBox(self.classifyTab)
+		self.treeComboBox.move(10, 100)
+
+		treeList = os.listdir("./data/models")
+		for tree in treeList:
+			self.treeComboBox.addItem(tree)
+
+		self.classifyButton = QPushButton("Classify", self.classifyTab)
+		self.classifyButton.move(10, 130)
+		self.classifyButton.clicked.connect(self.classifyReview)
+
+	def classifyReview(self):
+		tree = self.treeComboBox.currentText()
+		review = self.reviewTextEdit.toPlainText()
+		label = self.mainControl.classifyReview(review, tree)
+		self.logOutput.append(f"{review} = {label[0]}")
 
 	def typecast_to_int(self, s):
 	    s = s.strip()
