@@ -54,10 +54,12 @@ f, axarr = plt.subplots(1, 2, sharey=True)
 axarr[0].set_title("Before removing outlier")
 axarr[0].set_xlabel("Komponen 1")
 axarr[0].set_ylabel("Komponen 2")
+axarr[0].set_xlim(-0.6, 0.8)
 
 axarr[1].set_title("After removing outlier")
 axarr[1].set_xlabel("Komponen 1")
 axarr[1].set_ylabel("Komponen 2")
+axarr[1].set_xlim(-0.6, 0.8)
 
 for label in set(data["Label"]):
 	axarr[0].scatter(data2D[data[data["Label"] == label].index.values][:,0], data2D[data[data["Label"] == label].index.values][:,1], c=colors[data[data["Label"] == label].index.values], label=english_labels[label], edgecolors='black')

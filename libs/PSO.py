@@ -2,8 +2,34 @@ from entities.Particle import Particle
 import random
 
 class PSO:
+	"""
+	Class yang menangani proses Particle Swarm Optimization
+
+	Attributes:
+		particleSize (int): ukuran partikel
+		populationSize (int): jumlah partikel
+		numIteration (int): jumlah iterasi/generasi
+		c1 (double): individual learning rate
+		c2 (double): social learning rate
+		target (double): target akurasi yang ingin diperoleh
+		particles (list): partikel-partikel
+		iterationBest (list): partikel terbaik tiap iterasi
+	"""
 
 	def __init__(self, particleSize, populationSize, numIteration, c1, c2, target):
+		"""
+		Constructor
+
+		Parameters:
+		particleSize (int): ukuran partikel
+		populationSize (int): jumlah partikel
+		numIteration (int): jumlah iterasi/generasi
+		c1 (double): individual learning rate
+		c2 (double): social learning rate
+		target (double): target akurasi yang ingin diperoleh
+
+		"""
+
 		self.particleSize = particleSize
 		self.populationSize = populationSize
 		self.numIteration = numIteration
@@ -14,6 +40,15 @@ class PSO:
 		self.iterationBest = []
 
 	def exec(self, train, test):
+		"""
+		Eksekusi particle swarm optimization
+	
+		Parameters:
+		train (DataFrame): objek yang berisi review dan label untuk training
+		test (DataFrame): objek yang berisi review dan label untuk testing
+
+		"""
+
 		for _ in range(self.numIteration):
 			for i in range(self.populationSize):
 				print(self.particles[i].position)

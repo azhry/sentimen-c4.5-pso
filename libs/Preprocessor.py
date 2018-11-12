@@ -18,3 +18,6 @@ class Preprocessor:
 
 	def preprocess(self, words):
 		return [token for token in self.tokenizing(self.stemming(words)) if token not in self.stopwords]
+
+	def selected_preprocess(self, words, selected_words):
+		return [token for token in self.tokenizing(self.stemming(words)) if token not in self.stopwords and token in selected_words]
